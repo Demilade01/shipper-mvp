@@ -13,3 +13,63 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// User model - for authentication and user info
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  avatar        String?  // URL from Google or placeholder
+  password      String?  // Hashed, only if JWT auth
+  googleId      String?  @unique // If using Google OAuth
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  sentMessages     Message[]         @relation("Sender")
+  receivedMessages Message[]         @relation("Receiver")
+  chats            ChatParticipant[]
+}
+
+// Chat model - for chat sessions
+model Chat {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ChatParticipant[]
+  messages     Message[]
+}
+
+// ChatParticipant model - many-to-many relationship between users and chats
+model ChatParticipant {
+  id        String   @id @default(cuid())
+  userId    String
+  chatId    String
+  joinedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chatId])
+  @@index([userId])
+  @@index([chatId])
+}
+
+// Message model - for storing messages
+model Message {
+  id         String   @id @default(cuid())
+  content    String
+  senderId   String
+  receiverId String?  // For direct messages
+  chatId     String?
+  createdAt  DateTime @default(now())
+
+  sender   User   @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User?  @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  chat     Chat?  @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([senderId, receiverId])
+  @@index([createdAt])
+}
