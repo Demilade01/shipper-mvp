@@ -6,7 +6,7 @@ import { verifyAccessToken } from '@/lib/auth';
 const protectedRoutes = ['/chat', '/api/users', '/api/messages', '/api/chats'];
 
 // Public routes that don't require authentication
-const publicRoutes = ['/login', '/register', '/api/auth'];
+const publicRoutes = ['/login', '/register', '/api/auth', '/api/socket'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
