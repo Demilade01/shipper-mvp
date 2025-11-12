@@ -79,15 +79,15 @@ export async function GET(request: NextRequest) {
     });
 
     // Format chats
-    const chats = chatParticipants.map((cp) => {
+    const chats = chatParticipants.map((cp: typeof chatParticipants[0]) => {
       const otherParticipants = cp.chat.participants.filter(
-        (p) => p.userId !== currentUser.id
+        (p: typeof cp.chat.participants[0]) => p.userId !== currentUser.id
       );
       const lastMessage = cp.chat.messages[0] || null;
 
       return {
         id: cp.chat.id,
-        participants: otherParticipants.map((p) => p.user),
+        participants: otherParticipants.map((p: typeof otherParticipants[0]) => p.user),
         lastMessage: lastMessage
           ? {
               id: lastMessage.id,
@@ -197,13 +197,13 @@ export async function POST(request: NextRequest) {
     if (existingChat) {
       // Return existing chat
       const otherParticipants = existingChat.chat.participants.filter(
-        (p) => p.userId !== currentUser.id
+        (p: typeof existingChat.chat.participants[0]) => p.userId !== currentUser.id
       );
 
       return NextResponse.json({
         chat: {
           id: existingChat.chat.id,
-          participants: otherParticipants.map((p) => p.user),
+          participants: otherParticipants.map((p: typeof otherParticipants[0]) => p.user),
           lastMessage: null,
           createdAt: existingChat.chat.createdAt,
           updatedAt: existingChat.chat.updatedAt,
@@ -243,14 +243,14 @@ export async function POST(request: NextRequest) {
 
     // Format chat
     const otherParticipants = chat.participants.filter(
-      (p) => p.userId !== currentUser.id
+      (p: typeof chat.participants[0]) => p.userId !== currentUser.id
     );
 
     return NextResponse.json(
       {
         chat: {
           id: chat.id,
-          participants: otherParticipants.map((p) => p.user),
+          participants: otherParticipants.map((p: typeof otherParticipants[0]) => p.user),
           lastMessage: null,
           createdAt: chat.createdAt,
           updatedAt: chat.updatedAt,
