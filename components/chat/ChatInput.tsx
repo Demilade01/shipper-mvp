@@ -102,7 +102,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
   }
 
   return (
-    <div className="p-4 border-t bg-white">
+    <div className="p-4 border-t bg-white shrink-0">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
           ref={inputRef}

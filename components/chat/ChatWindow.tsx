@@ -177,9 +177,9 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
       // User is selected but chat doesn't exist yet - show receiver info
       const displayName = receiverName || receiverEmail || 'User';
       return (
-        <div className="flex-1 flex flex-col bg-[#f9f9f9]">
+        <div className="flex-1 flex flex-col bg-[#f9f9f9] min-h-0 overflow-hidden">
           {/* Chat header */}
-          <div className="p-4 border-b bg-white">
+          <div className="p-4 border-b bg-white shrink-0">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={receiverAvatar || undefined} alt={displayName} />
@@ -197,7 +197,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
           </div>
 
           {/* Empty state */}
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center min-h-0">
             <div className="text-center text-muted-foreground">
               <p className="text-lg font-medium">No messages yet</p>
               <p className="text-sm mt-2">Start the conversation by sending a message</p>
@@ -209,7 +209,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
 
     // No user selected
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9]">
+      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] min-h-0">
         <div className="text-center text-muted-foreground">
           <p className="text-lg font-medium">Select a user to start chatting</p>
           <p className="text-sm mt-2">Choose a user from the list to begin a conversation</p>
@@ -220,7 +220,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9]">
+      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] min-h-0">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -228,7 +228,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
 
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9]">
+      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] min-h-0">
         <div className="text-center text-muted-foreground">
           <p className="text-sm">Failed to load messages</p>
         </div>
@@ -237,9 +237,9 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[#f9f9f9]">
+    <div className="flex-1 flex flex-col bg-[#f9f9f9] min-h-0 overflow-hidden">
       {/* Chat header */}
-      <div className="p-4 border-b bg-white">
+      <div className="p-4 border-b bg-white shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={receiverAvatar || undefined} alt={receiverName || receiverEmail || 'User'} />

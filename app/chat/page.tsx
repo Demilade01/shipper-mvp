@@ -81,31 +81,29 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#f9f9f9]">
-      <div className="flex-1 flex overflow-hidden">
-        {/* User list sidebar */}
-        <div className="w-80 border-r bg-white flex flex-col">
-          <UserList
-            onUserSelect={setSelectedUserId}
-            selectedUserId={selectedUserId || undefined}
-          />
-        </div>
+    <div className="h-screen flex overflow-hidden bg-[#f9f9f9]">
+      {/* User list sidebar */}
+      <div className="w-80 border-r bg-white flex flex-col overflow-hidden">
+        <UserList
+          onUserSelect={setSelectedUserId}
+          selectedUserId={selectedUserId || undefined}
+        />
+      </div>
 
-        {/* Chat window */}
-        <div className="flex-1 flex flex-col">
-          <ChatWindow
-            chatId={currentChat?.id || null}
-            receiverId={receiverId}
-            receiverName={receiverName}
-            receiverEmail={receiverEmail}
-            receiverAvatar={receiverAvatar}
-          />
-          <ChatInput
-            chatId={currentChat?.id || null}
-            receiverId={receiverId}
-            onChatCreated={handleChatCreated}
-          />
-        </div>
+      {/* Chat window */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <ChatWindow
+          chatId={currentChat?.id || null}
+          receiverId={receiverId}
+          receiverName={receiverName}
+          receiverEmail={receiverEmail}
+          receiverAvatar={receiverAvatar}
+        />
+        <ChatInput
+          chatId={currentChat?.id || null}
+          receiverId={receiverId}
+          onChatCreated={handleChatCreated}
+        />
       </div>
     </div>
   );
