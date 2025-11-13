@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsers } from '@/hooks/useUsers';
+import { useAIUser } from '@/hooks/useAIUser';
 import { useChats } from '@/hooks/useChats';
 import { useQueryClient } from '@tanstack/react-query';
 import { UserList } from '@/components/chat/UserList';
@@ -15,6 +16,7 @@ import type { Chat } from '@/hooks/useChats';
 export default function ChatPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { data: users } = useUsers();
+  const { data: aiUser } = useAIUser();
   const { data: chats, refetch: refetchChats } = useChats();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -61,8 +63,8 @@ export default function ChatPage() {
     // The useEffect will update currentChat when chats are refetched
   };
 
-  // Get receiver info
-  const receiver = users?.find((u) => u.id === selectedUserId);
+  // Get receiver info (check both users and AI user)
+  const receiver = users?.find((u) => u.id === selectedUserId) || (aiUser && aiUser.id === selectedUserId ? aiUser : null);
   const receiverId = receiver?.id;
   const receiverName = receiver?.name || undefined;
   const receiverEmail = receiver?.email;

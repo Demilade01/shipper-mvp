@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMessages, Message } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { useSocket } from '@/hooks/useSocket';
+import { useAIUser } from '@/hooks/useAIUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -20,12 +21,16 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
   const { data: messages, isLoading, error } = useMessages(chatId);
   const { user } = useAuth();
   const { socket, onlineUsers, isConnected } = useSocket();
+  const { data: aiUser } = useAIUser();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [realTimeMessages, setRealTimeMessages] = useState<Message[]>([]);
 
-  // Check if receiver is online (only if socket is connected)
-  const isReceiverOnline = receiverId && isConnected ? onlineUsers.has(receiverId) : false;
+  // Check if receiver is AI user
+  const isAIReceiver = aiUser && receiverId === aiUser.id;
+
+  // Check if receiver is online (only if socket is connected and not AI)
+  const isReceiverOnline = !isAIReceiver && receiverId && isConnected ? onlineUsers.has(receiverId) : false;
 
   // Combine API messages with real-time messages, removing duplicates
   const allMessages = (() => {
@@ -190,7 +195,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
               <div>
                 <p className="font-medium">{displayName}</p>
                 <p className="text-xs text-muted-foreground">
-                  {isReceiverOnline ? 'Active now' : 'offline'}
+                  {isAIReceiver ? 'AI Assistant' : isReceiverOnline ? 'Active now' : 'offline'}
                 </p>
               </div>
             </div>
@@ -250,7 +255,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
           <div>
             <p className="font-medium">{receiverName || receiverEmail || 'User'}</p>
             <p className="text-xs text-muted-foreground">
-              {isReceiverOnline ? 'Active now' : 'offline'}
+              {isAIReceiver ? 'AI Assistant' : isReceiverOnline ? 'Active now' : 'offline'}
             </p>
           </div>
         </div>

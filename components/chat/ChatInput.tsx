@@ -4,9 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useCreateMessage } from '@/hooks/useMessages';
 import { useCreateChat } from '@/hooks/useChats';
 import { useSocket } from '@/hooks/useSocket';
+import { useAIUser } from '@/hooks/useAIUser';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 
 interface ChatInputProps {
   chatId: string | null;
@@ -19,15 +21,19 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
   const { mutateAsync: createMessage, isPending: isSending } = useCreateMessage();
   const { mutateAsync: createChat, isPending: isCreatingChat } = useCreateChat();
   const { socket } = useSocket();
+  const { data: aiUser } = useAIUser();
+  const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [currentChatId, setCurrentChatId] = useState<string | null>(chatId);
+  const [isAILoading, setIsAILoading] = useState(false);
 
   // Update currentChatId when chatId prop changes
   useEffect(() => {
     setCurrentChatId(chatId);
   }, [chatId]);
 
-  const isPending = isSending || isCreatingChat;
+  const isPending = isSending || isCreatingChat || isAILoading;
+  const isAIChat = aiUser && receiverId === aiUser.id;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +43,58 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
     setMessage('');
 
     try {
+      // Handle AI chat differently
+      if (isAIChat) {
+        setIsAILoading(true);
+
+        let actualChatId = currentChatId;
+
+        // Create chat if it doesn't exist
+        if (!actualChatId && receiverId) {
+          const chat = await createChat(receiverId);
+          actualChatId = chat.id;
+          setCurrentChatId(actualChatId);
+          if (onChatCreated) {
+            onChatCreated(actualChatId);
+          }
+        }
+
+        if (!actualChatId) {
+          throw new Error('Chat ID is required');
+        }
+
+        // Send message to AI API
+        const response = await fetch('/api/chat/ai', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: messageContent,
+            chatId: actualChatId,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          const errorMessage = error.error || error.message || 'Failed to send message to AI';
+          throw new Error(errorMessage);
+        }
+
+        // Invalidate messages query to refetch with AI response
+        queryClient.invalidateQueries({ queryKey: ['messages', actualChatId] });
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
+
+        // Emit message event via Socket.io if connected for real-time update
+        if (socket && socket.connected) {
+          socket.emit('joinChat', actualChatId);
+        }
+
+        setIsAILoading(false);
+        return;
+      }
+
+      // Regular chat handling
       let actualChatId = currentChatId;
 
       // Create chat if it doesn't exist
@@ -74,6 +132,9 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
       console.error('Error sending message:', error);
       // Restore message on error
       setMessage(messageContent);
+      setIsAILoading(false);
+      // TODO: Show error toast/notification to user
+      // For now, error is logged to console
     }
   };
 
@@ -107,7 +168,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Type a message..."
+          placeholder={isAIChat ? "Ask AI anything..." : "Type a message..."}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={isPending}
@@ -119,9 +180,18 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
           disabled={!message.trim() || isPending}
           className="shrink-0"
         >
-          <Send className="h-4 w-4" />
+          {isAILoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
         </Button>
       </form>
+      {isAILoading && (
+        <p className="text-xs text-muted-foreground mt-2">
+          AI is thinking...
+        </p>
+      )}
     </div>
   );
 }
