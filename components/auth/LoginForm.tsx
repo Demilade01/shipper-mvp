@@ -46,10 +46,12 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-white/80 backdrop-blur-[20px] border border-gray-100/50 shadow-xl shadow-[#070825]/5">
       <CardHeader>
-        <CardTitle>Login</CardTitle>
-        <CardDescription>Enter your credentials to access your account</CardDescription>
+        <CardTitle className="text-[#070825]">Login</CardTitle>
+        <CardDescription className="text-[#070825]/60">
+          Enter your credentials to access your account
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
@@ -66,9 +68,14 @@ export function LoginForm() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-[#070825]">Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="you@example.com" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      className="border-gray-200 focus:border-[#070825] focus:ring-[#070825]"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -80,16 +87,25 @@ export function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="text-[#070825]">Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      className="border-gray-200 focus:border-[#070825] focus:ring-[#070825]"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isLoggingIn}>
+            <Button
+              type="submit"
+              className="w-full bg-[#070825] hover:bg-[#070825]/90 text-white rounded-full shadow-lg shadow-[#070825]/20 transition-all duration-300"
+              disabled={isLoggingIn}
+            >
               {isLoggingIn ? 'Logging in...' : 'Login'}
             </Button>
           </form>
@@ -98,10 +114,10 @@ export function LoginForm() {
         <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <Separator />
+              <Separator className="bg-gray-200" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+              <span className="bg-white px-2 text-[#070825]/50">
                 Or continue with
               </span>
             </div>

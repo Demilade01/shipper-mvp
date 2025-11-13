@@ -18,22 +18,27 @@ export default function RegisterPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f9f9f9] flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-[#070825]/60">Loading...</div>
       </div>
     );
   }
 
   if (isAuthenticated) {
     return null; // Will redirect
-    }
+  }
 
   return (
-    <div className="min-h-screen bg-[#f9f9f9] flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Create an account</h1>
-          <p className="text-muted-foreground">
+          <h1
+            className="text-3xl md:text-4xl font-bold tracking-tight text-[#070825]"
+            style={{ fontFamily: 'var(--font-poppins)' }}
+          >
+            Create an account
+          </h1>
+          <p className="text-[#070825]/60">
             Get started with Shipper in seconds
           </p>
         </div>
@@ -41,10 +46,10 @@ export default function RegisterPage() {
         <RegisterForm />
 
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">Already have an account? </span>
+          <span className="text-[#070825]/60">Already have an account? </span>
           <Link
             href="/login"
-            className="font-medium text-[#1e3a8a] hover:underline"
+            className="font-medium text-[#070825] hover:text-[#070825]/80 transition-colors"
           >
             Sign in
           </Link>

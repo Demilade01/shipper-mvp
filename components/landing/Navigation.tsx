@@ -2,17 +2,28 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function Navigation() {
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -28,7 +39,6 @@ export function Navigation() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      // Close if clicking outside the nav element
       if (mobileMenuOpen && !target.closest('nav')) {
         setMobileMenuOpen(false);
       }
@@ -51,185 +61,224 @@ export function Navigation() {
     };
   }, [mobileMenuOpen]);
 
+  const navLinks = [
+    { href: '/', label: 'Home' },
+    { href: '/#features', label: 'Features' },
+    { href: '/#pricing', label: 'Pricing' },
+    { href: '/#about', label: 'About' },
+    { href: '/#contact', label: 'Contact' },
+  ];
+
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white border-b rounded-b-lg shadow-sm">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        {/* Left side - Logo and Navigation Links */}
-        <div className="flex items-center gap-3 md:gap-6">
-          <Link href="/" className="flex items-center" onClick={closeMobileMenu}>
-            <span className="text-lg md:text-xl font-serif font-bold text-[#1e3a8a] tracking-tight">
-              Shipper
-            </span>
-          </Link>
+    <motion.nav
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/80 backdrop-blur-[20px] shadow-sm border-b border-gray-100/50'
+          : 'bg-white/60 backdrop-blur-[20px]'
+      }`}
+    >
+      <div className="container mx-auto flex h-16 md:h-20 items-center justify-between px-4 md:px-6 lg:px-8">
+        {/* Logo */}
+        <Link href="/" className="flex items-center">
+          <motion.span
+            whileHover={{ scale: 1.05 }}
+            className="text-xl md:text-2xl font-bold text-[#070825] tracking-tight"
+            style={{ fontFamily: 'var(--font-poppins)' }}
+          >
+            Shipper
+          </motion.span>
+        </Link>
 
-          <Separator orientation="vertical" className="hidden md:block h-5 bg-gray-300" />
-
-          <div className="hidden md:flex items-center gap-6">
-            <Link
-              href="/blog"
-              className="text-sm font-normal text-gray-500 hover:text-gray-700 transition-colors"
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-8 lg:gap-12">
+          {navLinks.map((link, index) => (
+            <motion.div
+              key={link.href}
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              Blog
-            </Link>
-            <Link
-              href="/community"
-              className="text-sm font-normal text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              Community
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-sm font-normal text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              Pricing
-            </Link>
-          </div>
+              <Link
+                href={link.href}
+                className="text-sm font-medium text-[#070825]/70 hover:text-[#070825] transition-colors relative group"
+              >
+                {link.label}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#070825] transition-all duration-300 group-hover:w-full" />
+              </Link>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Right side - Auth Links and Button (Desktop) */}
-        <div className="hidden md:flex items-center gap-4 lg:gap-6">
+        {/* Desktop Auth Buttons */}
+        <div className="hidden md:flex items-center gap-4">
           {isLoading ? (
-            <div className="flex items-center gap-4 lg:gap-6">
-              <div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
-              <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
-              <div className="h-9 w-28 animate-pulse rounded-md bg-gray-200" />
+            <div className="flex items-center gap-4">
+              <div className="h-9 w-20 animate-pulse rounded-md bg-gray-200" />
+              <div className="h-9 w-24 animate-pulse rounded-md bg-gray-200" />
             </div>
           ) : isAuthenticated ? (
             <>
               <Link href="/chat">
-                <span className="text-sm font-normal text-gray-500 hover:text-gray-700 transition-colors">
-                  Playable Demo
-                </span>
+                <Button
+                  variant="ghost"
+                  className="text-sm font-medium text-[#070825]/70 hover:text-[#070825]"
+                >
+                  Chat
+                </Button>
               </Link>
               <Link href="/chat">
-                <Button className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-lg px-4 lg:px-5 text-sm">
-                  Go to Chat
-                </Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button className="bg-[#070825] hover:bg-[#070825]/90 text-white text-sm font-medium px-6 rounded-full shadow-lg shadow-[#070825]/20">
+                    Go to Chat
+                  </Button>
+                </motion.div>
               </Link>
               <Button
                 variant="ghost"
                 onClick={handleLogout}
-                className="text-gray-500 hover:text-gray-700 text-sm font-normal"
+                className="text-sm font-medium text-[#070825]/70 hover:text-[#070825]"
               >
                 Logout
               </Button>
             </>
           ) : (
             <>
-              <Link href="/chat">
-                <span className="text-sm font-normal text-gray-500 hover:text-gray-700 transition-colors">
-                  Playable Demo
-                </span>
-              </Link>
               <Link href="/login">
-                <span className="text-sm font-normal text-gray-500 hover:text-gray-700 transition-colors">
+                <Button
+                  variant="ghost"
+                  className="text-sm font-medium text-[#070825]/70 hover:text-[#070825]"
+                >
                   Login
-                </span>
+                </Button>
               </Link>
               <Link href="/register">
-                <Button className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-lg px-4 lg:px-6 font-medium text-sm">
-                  Get Started
-                </Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button className="bg-[#070825] hover:bg-[#070825]/90 text-white text-sm font-medium px-6 rounded-full shadow-lg shadow-[#070825]/20">
+                    Get Started
+                  </Button>
+                </motion.div>
               </Link>
             </>
           )}
         </div>
 
-        {/* Mobile menu button */}
+        {/* Mobile Menu Button */}
         <button
           type="button"
-          className="md:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors flex items-center justify-center"
+          className="md:hidden p-2 rounded-md text-[#070825]/70 hover:text-[#070825] hover:bg-white/50 transition-colors flex items-center justify-center min-w-[44px] min-h-[44px]"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle mobile menu"
           aria-expanded={mobileMenuOpen}
         >
-          {mobileMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
+          <AnimatePresence mode="wait">
+            {mobileMenuOpen ? (
+              <motion.div
+                key="close"
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <X className="h-6 w-6" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="menu"
+                initial={{ rotate: 90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: -90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Menu className="h-6 w-6" />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </button>
       </div>
 
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div ref={mobileMenuRef} className="md:hidden border-t bg-white">
-          <div className="px-4 py-4 space-y-4">
-            {/* Navigation Links */}
-            <div className="space-y-2">
-              <Link
-                href="/blog"
-                className="block py-2 text-sm font-normal text-gray-500 hover:text-gray-700 transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Blog
-              </Link>
-              <Link
-                href="/community"
-                className="block py-2 text-sm font-normal text-gray-500 hover:text-gray-700 transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Community
-              </Link>
-              <Link
-                href="/pricing"
-                className="block py-2 text-sm font-normal text-gray-500 hover:text-gray-700 transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Pricing
-              </Link>
-            </div>
-
-            <Separator />
-
-            {/* Auth Links */}
-            {isLoading ? (
-              <div className="space-y-2">
-                <div className="h-9 w-full animate-pulse rounded bg-gray-200" />
-                <div className="h-9 w-full animate-pulse rounded bg-gray-200" />
-              </div>
-            ) : isAuthenticated ? (
-              <div className="space-y-2">
-                <Link href="/chat" onClick={closeMobileMenu}>
-                  <Button variant="ghost" className="w-full justify-start text-sm">
-                    Playable Demo
-                  </Button>
-                </Link>
-                <Link href="/chat" onClick={closeMobileMenu}>
-                  <Button className="w-full bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-sm">
-                    Go to Chat
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  onClick={handleLogout}
-                  className="w-full justify-start text-sm text-gray-500 hover:text-gray-700"
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            ref={mobileMenuRef}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden overflow-hidden bg-white/80 backdrop-blur-[20px] border-t border-gray-100/50"
+          >
+            <div className="px-4 py-6 space-y-4">
+              {navLinks.map((link, index) => (
+                <motion.div
+                  key={link.href}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                  Logout
-                </Button>
+                  <Link
+                    href={link.href}
+                    className="block py-2 text-sm font-medium text-[#070825]/70 hover:text-[#070825] transition-colors"
+                    onClick={closeMobileMenu}
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
+              ))}
+
+              <div className="pt-4 border-t border-gray-100/50 space-y-3">
+                {isLoading ? (
+                  <div className="space-y-2">
+                    <div className="h-10 w-full animate-pulse rounded-md bg-gray-200" />
+                    <div className="h-10 w-full animate-pulse rounded-md bg-gray-200" />
+                  </div>
+                ) : isAuthenticated ? (
+                  <>
+                    <Link href="/chat" onClick={closeMobileMenu}>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm font-medium text-[#070825]/70 hover:text-[#070825]"
+                      >
+                        Chat
+                      </Button>
+                    </Link>
+                    <Link href="/chat" onClick={closeMobileMenu}>
+                      <Button className="w-full bg-[#070825] hover:bg-[#070825]/90 text-white text-sm font-medium rounded-full shadow-lg shadow-[#070825]/20">
+                        Go to Chat
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      onClick={handleLogout}
+                      className="w-full justify-start text-sm font-medium text-[#070825]/70 hover:text-[#070825]"
+                    >
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={closeMobileMenu}>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm font-medium text-[#070825]/70 hover:text-[#070825]"
+                      >
+                        Login
+                      </Button>
+                    </Link>
+                    <Link href="/register" onClick={closeMobileMenu}>
+                      <Button className="w-full bg-[#070825] hover:bg-[#070825]/90 text-white text-sm font-medium rounded-full shadow-lg shadow-[#070825]/20">
+                        Get Started
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
-            ) : (
-              <div className="space-y-2">
-                <Link href="/chat" onClick={closeMobileMenu}>
-                  <Button variant="ghost" className="w-full justify-start text-sm">
-                    Playable Demo
-                  </Button>
-                </Link>
-                <Link href="/login" onClick={closeMobileMenu}>
-                  <Button variant="ghost" className="w-full justify-start text-sm">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/register" onClick={closeMobileMenu}>
-                  <Button className="w-full bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-sm">
-                    Get Started
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </nav>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.nav>
   );
 }
