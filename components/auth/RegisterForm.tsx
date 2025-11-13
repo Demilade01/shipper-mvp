@@ -70,7 +70,7 @@ export function RegisterForm() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[#070825]">Name (optional)</FormLabel>
+                  <FormLabel className="text-[#070825]">Name</FormLabel>
                   <FormControl>
                     <Input
                       type="text"
