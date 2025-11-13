@@ -247,30 +247,30 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
       // User is selected but chat doesn't exist yet - show receiver info
       const displayName = receiverName || receiverEmail || 'User';
       return (
-        <div className="flex-1 flex flex-col bg-[#f9f9f9] min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col bg-white min-h-0 overflow-hidden">
           {/* Chat header */}
-          <div className="p-3 md:p-4 border-b bg-white shrink-0">
+          <div className="p-4 md:p-5 border-b border-gray-200/50 bg-white/80 backdrop-blur-[10px] shrink-0">
             <div className="flex items-center gap-3">
               {/* Back button for mobile */}
               {onBack && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="md:hidden h-8 w-8 shrink-0 -ml-2"
+                  className="md:hidden h-9 w-9 shrink-0 -ml-2 text-[#070825]/70 hover:text-[#070825] hover:bg-gray-100/50 rounded-full transition-colors"
                   onClick={onBack}
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               )}
-              <Avatar className="h-10 w-10 shrink-0">
+              <Avatar className="h-11 w-11 shrink-0 ring-2 ring-white shadow-sm">
                 <AvatarImage src={receiverAvatar || undefined} alt={displayName} />
-                <AvatarFallback>
+                <AvatarFallback className="bg-[#070825]/10 text-[#070825] font-semibold">
                   {getInitials(receiverName || null, receiverEmail || 'User')}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{displayName}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="font-semibold text-[#070825] truncate">{displayName}</p>
+                <p className="text-xs text-[#070825]/60 mt-0.5">
                   {isAIReceiver ? 'AI Assistant' : isReceiverOnline ? 'Active now' : 'offline'}
                 </p>
               </div>
@@ -278,9 +278,9 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
           </div>
 
           {/* Empty state */}
-          <div className="flex-1 flex items-center justify-center min-h-0">
-            <div className="text-center text-muted-foreground">
-              <p className="text-lg font-medium">No messages yet</p>
+          <div className="flex-1 flex items-center justify-center min-h-0 bg-white">
+            <div className="text-center text-[#070825]/60 px-4">
+              <p className="text-lg font-semibold text-[#070825]">No messages yet</p>
               <p className="text-sm mt-2">Start the conversation by sending a message</p>
             </div>
           </div>
@@ -290,9 +290,9 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
 
     // No user selected
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] min-h-0">
-        <div className="text-center text-muted-foreground">
-          <p className="text-lg font-medium">Select a user to start chatting</p>
+      <div className="flex-1 flex items-center justify-center bg-white min-h-0">
+        <div className="text-center text-[#070825]/60 px-4">
+          <p className="text-lg font-semibold text-[#070825]">Select a user to start chatting</p>
           <p className="text-sm mt-2">Choose a user from the list to begin a conversation</p>
         </div>
       </div>
@@ -301,16 +301,16 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] min-h-0">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex-1 flex items-center justify-center bg-white min-h-0">
+        <Loader2 className="h-6 w-6 animate-spin text-[#070825]/60" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] min-h-0">
-        <div className="text-center text-muted-foreground">
+      <div className="flex-1 flex items-center justify-center bg-white min-h-0">
+        <div className="text-center text-[#070825]/60">
           <p className="text-sm">Failed to load messages</p>
         </div>
       </div>
@@ -318,30 +318,30 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[#f9f9f9] min-h-0 overflow-hidden">
+    <div className="flex-1 flex flex-col bg-white min-h-0 overflow-hidden">
       {/* Chat header */}
-      <div className="p-3 md:p-4 border-b bg-white shrink-0">
+      <div className="p-4 md:p-5 border-b border-gray-200/50 bg-white/80 backdrop-blur-[10px] shrink-0">
         <div className="flex items-center gap-3">
           {/* Back button for mobile */}
           {onBack && (
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden h-8 w-8 shrink-0 -ml-2"
+              className="md:hidden h-9 w-9 shrink-0 -ml-2 text-[#070825]/70 hover:text-[#070825] hover:bg-gray-100/50 rounded-full transition-colors"
               onClick={onBack}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <Avatar className="h-10 w-10 shrink-0">
+          <Avatar className="h-11 w-11 shrink-0 ring-2 ring-white shadow-sm">
             <AvatarImage src={receiverAvatar || undefined} alt={receiverName || receiverEmail || 'User'} />
-            <AvatarFallback>
+            <AvatarFallback className="bg-[#070825]/10 text-[#070825] font-semibold">
               {getInitials(receiverName || null, receiverEmail || 'User')}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{receiverName || receiverEmail || 'User'}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="font-semibold text-[#070825] truncate">{receiverName || receiverEmail || 'User'}</p>
+            <p className="text-xs text-[#070825]/60 mt-0.5">
               {isAIReceiver ? 'AI Assistant' : isReceiverOnline ? 'Active now' : 'offline'}
             </p>
           </div>
@@ -351,13 +351,13 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
       {/* Messages */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 min-h-0"
+        className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0 bg-white"
         style={{
           scrollBehavior: 'smooth',
         }}
       >
         {allMessages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+          <div className="flex items-center justify-center h-full text-center text-[#070825]/60">
             <p>No messages yet. Start the conversation!</p>
           </div>
         ) : (
@@ -375,11 +375,11 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
                   }`}
                 >
                   {/* Avatar - only show for first message in group */}
-                  <div className="w-8 shrink-0">
+                  <div className="w-9 shrink-0">
                     {group.shouldShowAvatar[0] && (
-                      <Avatar className="h-8 w-8">
+                      <Avatar className="h-9 w-9 ring-2 ring-white shadow-sm">
                         <AvatarImage src={firstMessage.sender.avatar || undefined} alt={senderName} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-[#070825]/10 text-[#070825] font-semibold text-xs">
                           {getInitials(firstMessage.sender.name, firstMessage.sender.email)}
                         </AvatarFallback>
                       </Avatar>
@@ -387,7 +387,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
                   </div>
 
                   {/* Messages in group */}
-                  <div className={`flex flex-col gap-0.5 max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                  <div className={`flex flex-col gap-1 max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                     {group.messages.map((message, messageIndex) => {
                       const showTimestamp = group.shouldShowTimestamp[messageIndex];
 
@@ -399,12 +399,12 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
                           {/* Attachment preview */}
                           {message.attachmentUrl && (
                             <div
-                              className={`rounded-lg overflow-hidden ${
+                              className={`rounded-xl overflow-hidden shadow-sm ${
                                 message.attachmentType?.startsWith('image/')
                                   ? 'bg-transparent' // No background for images
                                   : isOwnMessage
-                                  ? 'bg-[#1e3a8a]/10 border border-[#1e3a8a]/20'
-                                  : 'bg-gray-50 border border-gray-200'
+                                  ? 'bg-[#070825]/5 border border-[#070825]/10'
+                                  : 'bg-gray-50 border border-gray-200/50'
                               }`}
                             >
                               {message.attachmentType?.startsWith('image/') ? (
@@ -418,7 +418,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
                                     <img
                                       src={message.attachmentUrl}
                                       alt={message.attachmentName || 'Image'}
-                                      className="max-w-full h-auto max-h-[500px] w-auto object-contain cursor-pointer rounded-lg block shadow-sm"
+                                      className="max-w-full h-auto max-h-[500px] w-auto object-contain cursor-pointer rounded-xl block shadow-sm"
                                       loading="lazy"
                                     />
                                   </Link>
@@ -428,31 +428,31 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
                                   href={message.attachmentUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center gap-3 p-3 hover:bg-gray-100 transition-colors"
+                                  className="flex items-center gap-3 p-3 hover:bg-gray-100/50 transition-colors rounded-xl"
                                 >
-                                  <div className={`p-2 rounded ${
+                                  <div className={`p-2 rounded-lg ${
                                     isOwnMessage
-                                      ? 'bg-[#1e3a8a] text-white'
+                                      ? 'bg-[#070825] text-white'
                                       : 'bg-gray-200'
                                   }`}>
                                     <FileIcon className="h-5 w-5" />
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className={`text-sm font-medium truncate ${
-                                      isOwnMessage ? 'text-[#1e3a8a]' : 'text-gray-900'
+                                      isOwnMessage ? 'text-[#070825]' : 'text-[#070825]'
                                     }`}>
                                       {message.attachmentName || 'File'}
                                     </p>
                                     {message.attachmentSize && (
                                       <p className={`text-xs ${
-                                        isOwnMessage ? 'text-[#1e3a8a]/70' : 'text-gray-500'
+                                        isOwnMessage ? 'text-[#070825]/70' : 'text-[#070825]/50'
                                       }`}>
                                         {(message.attachmentSize / 1024).toFixed(1)} KB
                                       </p>
                                     )}
                                   </div>
                                   <Download className={`h-4 w-4 ${
-                                    isOwnMessage ? 'text-[#1e3a8a]' : 'text-gray-500'
+                                    isOwnMessage ? 'text-[#070825]' : 'text-[#070825]/60'
                                   }`} />
                                 </Link>
                               )}
@@ -463,19 +463,19 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
                           {message.content &&
                            !(message.attachmentUrl && message.content.trim().startsWith('📎')) && (
                             <div
-                              className={`rounded-lg px-4 py-2 ${
+                              className={`rounded-xl px-4 py-2.5 shadow-sm ${
                                 isOwnMessage
-                                  ? 'bg-[#1e3a8a] text-white'
-                                  : 'bg-white border'
+                                  ? 'bg-[#070825] text-white'
+                                  : 'bg-white border border-gray-200/50 text-[#070825]'
                               }`}
                               style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
                             >
-                              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                              <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
                             </div>
                           )}
 
                           {showTimestamp && (
-                            <p className="text-xs text-muted-foreground px-1">
+                            <p className="text-xs text-[#070825]/50 px-1.5 mt-0.5">
                               {formatMessageTime(message.createdAt)}
                             </p>
                           )}
