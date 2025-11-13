@@ -9,6 +9,10 @@ const createMessageSchema = z.object({
   content: z.string().min(1, 'Message content is required'),
   chatId: z.string().min(1, 'Chat ID is required'),
   receiverId: z.string().optional(), // For direct messages
+  attachmentUrl: z.string().url().optional().nullable(),
+  attachmentName: z.string().optional().nullable(),
+  attachmentType: z.string().optional().nullable(),
+  attachmentSize: z.number().int().positive().optional().nullable(),
 });
 
 /**
@@ -127,7 +131,23 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const validationResult = createMessageSchema.safeParse(body);
+
+    // Verify that either content or attachment exists
+    if ((!body.content || !body.content.trim()) && !body.attachmentUrl) {
+      return NextResponse.json(
+        { error: 'Message content or attachment is required' },
+        { status: 400 }
+      );
+    }
+
+    // Create schema that allows empty content if attachment exists
+    const messageSchema = createMessageSchema.extend({
+      content: body.attachmentUrl
+        ? z.string().min(0) // Allow empty if attachment exists
+        : z.string().min(1, 'Message content is required'), // Require content if no attachment
+    });
+
+    const validationResult = messageSchema.safeParse(body);
 
     if (!validationResult.success) {
       return NextResponse.json(
@@ -136,7 +156,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { content, chatId, receiverId } = validationResult.data;
+    const { content, chatId, receiverId, attachmentUrl, attachmentName, attachmentType, attachmentSize } = validationResult.data;
 
     // Verify user is a participant in this chat
     if (chatId) {
@@ -155,13 +175,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create message
+    // Create message (use emoji placeholder if no content but attachment exists)
+    const messageContent = (content && content.trim()) || (attachmentUrl ? `📎 ${attachmentName || 'File'}` : '');
+
     const message = await db.message.create({
       data: {
-        content,
+        content: messageContent,
         senderId: currentUser.id,
         receiverId: receiverId || null,
         chatId: chatId || null,
+        attachmentUrl: attachmentUrl || null,
+        attachmentName: attachmentName || null,
+        attachmentType: attachmentType || null,
+        attachmentSize: attachmentSize || null,
       },
       include: {
         sender: {

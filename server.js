@@ -196,7 +196,7 @@ app.prepare().then(() => {
     // Send message handler
     socket.on('sendMessage', async (data) => {
       try {
-        const { content, chatId, receiverId } = data;
+        const { content, chatId, receiverId, attachmentUrl, attachmentName, attachmentType, attachmentSize } = data;
 
         // Verify user is a participant in the chat
         const participant = await db.chatParticipant.findFirst({
@@ -218,6 +218,10 @@ app.prepare().then(() => {
             senderId: userId,
             receiverId: receiverId || null,
             chatId,
+            attachmentUrl: attachmentUrl || null,
+            attachmentName: attachmentName || null,
+            attachmentType: attachmentType || null,
+            attachmentSize: attachmentSize || null,
           },
           include: {
             sender: {
@@ -254,6 +258,10 @@ app.prepare().then(() => {
           chatId: message.chatId,
           createdAt: message.createdAt.toISOString(),
           sender: message.sender,
+          attachmentUrl: message.attachmentUrl,
+          attachmentName: message.attachmentName,
+          attachmentType: message.attachmentType,
+          attachmentSize: message.attachmentSize,
         });
       } catch (error) {
         console.error('Error sending message:', error);

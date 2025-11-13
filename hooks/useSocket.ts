@@ -19,6 +19,10 @@ export interface ServerToClientEvents {
       name: string | null;
       avatar: string | null;
     };
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+    attachmentType?: string | null;
+    attachmentSize?: number | null;
   }) => void;
   userOnline: (userId: string) => void;
   userOffline: (userId: string) => void;
@@ -34,6 +38,10 @@ export interface ClientToServerEvents {
     content: string;
     chatId: string;
     receiverId?: string;
+    attachmentUrl?: string;
+    attachmentName?: string;
+    attachmentType?: string;
+    attachmentSize?: number;
   }) => void;
   typing: (data: { chatId: string; isTyping: boolean }) => void;
 }

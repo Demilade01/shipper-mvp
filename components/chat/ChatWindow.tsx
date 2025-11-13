@@ -7,8 +7,9 @@ import { useSocket } from '@/hooks/useSocket';
 import { useAIUser } from '@/hooks/useAIUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, File as FileIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 interface ChatWindowProps {
   chatId: string | null;
@@ -129,6 +130,10 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
         name: string | null;
         avatar: string | null;
       };
+      attachmentUrl?: string | null;
+      attachmentName?: string | null;
+      attachmentType?: string | null;
+      attachmentSize?: number | null;
     }) => {
       if (data.chatId === chatId) {
         // Transform Socket.io message to Match Message type
@@ -141,6 +146,10 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
           createdAt: data.createdAt,
           sender: data.sender,
           receiver: null, // Receiver is not included in Socket.io events
+          attachmentUrl: data.attachmentUrl || null,
+          attachmentName: data.attachmentName || null,
+          attachmentType: data.attachmentType || null,
+          attachmentSize: data.attachmentSize || null,
         };
 
         setRealTimeMessages((prev) => {
@@ -387,16 +396,84 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
                           key={message.id}
                           className="flex flex-col gap-0.5"
                         >
-                          <div
-                            className={`rounded-lg px-4 py-2 ${
-                              isOwnMessage
-                                ? 'bg-[#1e3a8a] text-white'
-                                : 'bg-white border'
-                            }`}
-                            style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
-                          >
-                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                          </div>
+                          {/* Attachment preview */}
+                          {message.attachmentUrl && (
+                            <div
+                              className={`rounded-lg overflow-hidden ${
+                                message.attachmentType?.startsWith('image/')
+                                  ? 'bg-transparent' // No background for images
+                                  : isOwnMessage
+                                  ? 'bg-[#1e3a8a]/10 border border-[#1e3a8a]/20'
+                                  : 'bg-gray-50 border border-gray-200'
+                              }`}
+                            >
+                              {message.attachmentType?.startsWith('image/') ? (
+                                <div className="relative">
+                                  <Link
+                                    href={message.attachmentUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block"
+                                  >
+                                    <img
+                                      src={message.attachmentUrl}
+                                      alt={message.attachmentName || 'Image'}
+                                      className="max-w-full h-auto max-h-[500px] w-auto object-contain cursor-pointer rounded-lg block shadow-sm"
+                                      loading="lazy"
+                                    />
+                                  </Link>
+                                </div>
+                              ) : (
+                                <Link
+                                  href={message.attachmentUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-3 p-3 hover:bg-gray-100 transition-colors"
+                                >
+                                  <div className={`p-2 rounded ${
+                                    isOwnMessage
+                                      ? 'bg-[#1e3a8a] text-white'
+                                      : 'bg-gray-200'
+                                  }`}>
+                                    <FileIcon className="h-5 w-5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-sm font-medium truncate ${
+                                      isOwnMessage ? 'text-[#1e3a8a]' : 'text-gray-900'
+                                    }`}>
+                                      {message.attachmentName || 'File'}
+                                    </p>
+                                    {message.attachmentSize && (
+                                      <p className={`text-xs ${
+                                        isOwnMessage ? 'text-[#1e3a8a]/70' : 'text-gray-500'
+                                      }`}>
+                                        {(message.attachmentSize / 1024).toFixed(1)} KB
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Download className={`h-4 w-4 ${
+                                    isOwnMessage ? 'text-[#1e3a8a]' : 'text-gray-500'
+                                  }`} />
+                                </Link>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Message content - hide if it's just the attachment placeholder emoji */}
+                          {message.content &&
+                           !(message.attachmentUrl && message.content.trim().startsWith('📎')) && (
+                            <div
+                              className={`rounded-lg px-4 py-2 ${
+                                isOwnMessage
+                                  ? 'bg-[#1e3a8a] text-white'
+                                  : 'bg-white border'
+                              }`}
+                              style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
+                            >
+                              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                            </div>
+                          )}
+
                           {showTimestamp && (
                             <p className="text-xs text-muted-foreground px-1">
                               {formatMessageTime(message.createdAt)}

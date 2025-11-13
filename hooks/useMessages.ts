@@ -18,6 +18,10 @@ export interface Message {
   createdAt: string;
   sender: MessageSender;
   receiver: MessageSender | null;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+  attachmentType?: string | null;
+  attachmentSize?: number | null;
 }
 
 /**
@@ -39,6 +43,10 @@ async function createMessage(data: {
   content: string;
   chatId: string;
   receiverId?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentType?: string;
+  attachmentSize?: number;
 }): Promise<Message> {
   const response = await fetch('/api/messages', {
     method: 'POST',

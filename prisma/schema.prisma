@@ -64,6 +64,12 @@ model Message {
   chatId     String?
   createdAt  DateTime @default(now())
 
+  // File attachments
+  attachmentUrl   String?  // URL to the uploaded file
+  attachmentName  String?  // Original file name
+  attachmentType  String?  // MIME type (e.g., image/jpeg, application/pdf)
+  attachmentSize  Int?     // File size in bytes
+
   sender   User   @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User?  @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
   chat     Chat?  @relation(fields: [chatId], references: [id], onDelete: Cascade)
