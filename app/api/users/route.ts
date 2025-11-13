@@ -27,11 +27,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all users except current user
+    // Get all users except current user and AI user
+    // AI user will be added separately in the UI
     const users = await db.user.findMany({
       where: {
         id: {
           not: currentUser.id,
+        },
+        email: {
+          not: 'ai@system.local', // Exclude AI user
         },
       },
       select: {

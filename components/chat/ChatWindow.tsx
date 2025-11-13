@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useMessages, Message } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { useSocket } from '@/hooks/useSocket';
+import { useAIUser } from '@/hooks/useAIUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ChatWindowProps {
@@ -14,18 +16,23 @@ interface ChatWindowProps {
   receiverName?: string;
   receiverEmail?: string;
   receiverAvatar?: string;
+  onBack?: () => void; // Callback for mobile back button
 }
 
-export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, receiverAvatar }: ChatWindowProps) {
+export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, receiverAvatar, onBack }: ChatWindowProps) {
   const { data: messages, isLoading, error } = useMessages(chatId);
   const { user } = useAuth();
   const { socket, onlineUsers, isConnected } = useSocket();
+  const { data: aiUser } = useAIUser();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [realTimeMessages, setRealTimeMessages] = useState<Message[]>([]);
 
-  // Check if receiver is online (only if socket is connected)
-  const isReceiverOnline = receiverId && isConnected ? onlineUsers.has(receiverId) : false;
+  // Check if receiver is AI user
+  const isAIReceiver = aiUser && receiverId === aiUser.id;
+
+  // Check if receiver is online (only if socket is connected and not AI)
+  const isReceiverOnline = !isAIReceiver && receiverId && isConnected ? onlineUsers.has(receiverId) : false;
 
   // Combine API messages with real-time messages, removing duplicates
   const allMessages = (() => {
@@ -47,6 +54,58 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
     return Array.from(messageMap.values()).sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
+  })();
+
+  // Group messages: determine which messages should be grouped together
+  // Messages are grouped if they're from the same sender and within 5 minutes of each other
+  const GROUP_TIME_THRESHOLD = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+  const messageGroups = (() => {
+    if (allMessages.length === 0) return [];
+
+    const groups: Array<{
+      messages: Message[];
+      shouldShowAvatar: boolean[];
+      shouldShowTimestamp: boolean[];
+    }> = [];
+
+    for (let i = 0; i < allMessages.length; i++) {
+      const currentMessage = allMessages[i];
+      const previousMessage = i > 0 ? allMessages[i - 1] : null;
+
+      // Check if this message should be grouped with the previous one
+      const shouldGroup =
+        previousMessage &&
+        previousMessage.senderId === currentMessage.senderId &&
+        new Date(currentMessage.createdAt).getTime() - new Date(previousMessage.createdAt).getTime() <= GROUP_TIME_THRESHOLD;
+
+      if (shouldGroup && groups.length > 0) {
+        // Add to last group
+        const lastGroup = groups[groups.length - 1];
+        lastGroup.messages.push(currentMessage);
+        lastGroup.shouldShowAvatar.push(false); // Don't show avatar for grouped messages
+        lastGroup.shouldShowTimestamp.push(true); // Will be updated later
+      } else {
+        // Create new group
+        groups.push({
+          messages: [currentMessage],
+          shouldShowAvatar: [true], // Show avatar for first message in group
+          shouldShowTimestamp: [true], // Will be updated later
+        });
+      }
+    }
+
+    // Update timestamp visibility: show timestamp on last message of each group
+    groups.forEach((group) => {
+      // Reset all to false first
+      group.shouldShowTimestamp.fill(false);
+      // Show timestamp on last message
+      if (group.messages.length > 0) {
+        group.shouldShowTimestamp[group.messages.length - 1] = true;
+      }
+    });
+
+    return groups;
   })();
 
   // Listen for real-time messages
@@ -112,11 +171,13 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
 
       if (isNearBottom || allMessages.length <= 1) {
-        // Smooth scroll to bottom
-        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        // Small delay to ensure DOM is updated after grouping
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 0);
       }
     }
-  }, [allMessages]);
+  }, [allMessages.length]); // Use length instead of array to avoid dependency array size changes
 
   // Scroll to bottom on initial load
   useEffect(() => {
@@ -179,18 +240,29 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
       return (
         <div className="flex-1 flex flex-col bg-[#f9f9f9] min-h-0 overflow-hidden">
           {/* Chat header */}
-          <div className="p-4 border-b bg-white shrink-0">
+          <div className="p-3 md:p-4 border-b bg-white shrink-0">
             <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
+              {/* Back button for mobile */}
+              {onBack && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden h-8 w-8 shrink-0 -ml-2"
+                  onClick={onBack}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              )}
+              <Avatar className="h-10 w-10 shrink-0">
                 <AvatarImage src={receiverAvatar || undefined} alt={displayName} />
                 <AvatarFallback>
                   {getInitials(receiverName || null, receiverEmail || 'User')}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <p className="font-medium">{displayName}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{displayName}</p>
                 <p className="text-xs text-muted-foreground">
-                  {isReceiverOnline ? 'Active now' : 'offline'}
+                  {isAIReceiver ? 'AI Assistant' : isReceiverOnline ? 'Active now' : 'offline'}
                 </p>
               </div>
             </div>
@@ -239,18 +311,29 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
   return (
     <div className="flex-1 flex flex-col bg-[#f9f9f9] min-h-0 overflow-hidden">
       {/* Chat header */}
-      <div className="p-4 border-b bg-white shrink-0">
+      <div className="p-3 md:p-4 border-b bg-white shrink-0">
         <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
+          {/* Back button for mobile */}
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden h-8 w-8 shrink-0 -ml-2"
+              onClick={onBack}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
+          <Avatar className="h-10 w-10 shrink-0">
             <AvatarImage src={receiverAvatar || undefined} alt={receiverName || receiverEmail || 'User'} />
             <AvatarFallback>
               {getInitials(receiverName || null, receiverEmail || 'User')}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <p className="font-medium">{receiverName || receiverEmail || 'User'}</p>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium truncate">{receiverName || receiverEmail || 'User'}</p>
             <p className="text-xs text-muted-foreground">
-              {isReceiverOnline ? 'Active now' : 'offline'}
+              {isAIReceiver ? 'AI Assistant' : isReceiverOnline ? 'Active now' : 'offline'}
             </p>
           </div>
         </div>
@@ -259,7 +342,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
       {/* Messages */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+        className="flex-1 overflow-y-auto p-4 min-h-0"
         style={{
           scrollBehavior: 'smooth',
         }}
@@ -270,35 +353,58 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
           </div>
         ) : (
           <>
-            {allMessages.map((message) => {
-              const isOwnMessage = message.senderId === user?.id;
-              const senderName = message.sender.name || message.sender.email;
+            {messageGroups.map((group, groupIndex) => {
+              const firstMessage = group.messages[0];
+              const isOwnMessage = firstMessage.senderId === user?.id;
+              const senderName = firstMessage.sender.name || firstMessage.sender.email;
 
               return (
                 <div
-                  key={message.id}
-                  className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                  key={`group-${groupIndex}-${firstMessage.id}`}
+                  className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''} ${
+                    groupIndex > 0 ? 'mt-4' : ''
+                  }`}
                 >
-                  <Avatar className="h-8 w-8 shrink-0">
-                    <AvatarImage src={message.sender.avatar || undefined} alt={senderName} />
-                    <AvatarFallback>
-                      {getInitials(message.sender.name, message.sender.email)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className={`flex flex-col gap-1 max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-                    <div
-                      className={`rounded-lg px-4 py-2 ${
-                        isOwnMessage
-                          ? 'bg-[#1e3a8a] text-white'
-                          : 'bg-white border'
-                      }`}
-                      style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground px-1">
-                      {formatMessageTime(message.createdAt)}
-                    </p>
+                  {/* Avatar - only show for first message in group */}
+                  <div className="w-8 shrink-0">
+                    {group.shouldShowAvatar[0] && (
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={firstMessage.sender.avatar || undefined} alt={senderName} />
+                        <AvatarFallback>
+                          {getInitials(firstMessage.sender.name, firstMessage.sender.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+
+                  {/* Messages in group */}
+                  <div className={`flex flex-col gap-0.5 max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                    {group.messages.map((message, messageIndex) => {
+                      const showTimestamp = group.shouldShowTimestamp[messageIndex];
+
+                      return (
+                        <div
+                          key={message.id}
+                          className="flex flex-col gap-0.5"
+                        >
+                          <div
+                            className={`rounded-lg px-4 py-2 ${
+                              isOwnMessage
+                                ? 'bg-[#1e3a8a] text-white'
+                                : 'bg-white border'
+                            }`}
+                            style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
+                          >
+                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                          </div>
+                          {showTimestamp && (
+                            <p className="text-xs text-muted-foreground px-1">
+                              {formatMessageTime(message.createdAt)}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
