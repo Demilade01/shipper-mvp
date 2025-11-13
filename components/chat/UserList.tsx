@@ -1,12 +1,14 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useUsers } from '@/hooks/useUsers';
 import { useAIUser } from '@/hooks/useAIUser';
 import { useCreateChat } from '@/hooks/useChats';
 import { useSocket } from '@/hooks/useSocket';
+import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, Circle, Bot } from 'lucide-react';
+import { Loader2, Circle, Bot, LogOut } from 'lucide-react';
 import { User } from '@/hooks/useUsers';
 
 interface UserListProps {
@@ -20,6 +22,8 @@ export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: User
   const { data: aiUser, isLoading: isLoadingAI } = useAIUser();
   const { mutateAsync: createChat, isPending } = useCreateChat();
   const { onlineUsers, isConnected } = useSocket();
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
   const handleUserClick = async (user: User) => {
     try {
@@ -61,6 +65,16 @@ export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: User
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+
   if (isLoading || isLoadingAI) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -81,8 +95,22 @@ export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: User
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="p-4 border-b shrink-0">
-        <h2 className="text-lg font-semibold">Chat</h2>
+      <div className="p-3 md:p-4 border-b shrink-0 bg-white">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-base md:text-lg font-semibold">Chat</h2>
+          {user && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 md:h-9 md:w-9 shrink-0"
+              onClick={handleLogout}
+              title="Logout"
+              aria-label="Logout"
+            >
+              <LogOut className="h-4 w-4 md:h-5 md:w-5" />
+            </Button>
+          )}
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="divide-y">

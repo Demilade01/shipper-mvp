@@ -32,34 +32,34 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="bg-[#f8fafb] py-20 md:py-32">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-2xl text-center mb-12">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+    <section id="how-it-works" className="bg-[#f8fafb] py-12 sm:py-16 md:py-20 lg:py-32">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-10 md:mb-12">
+          <h2 className="mb-3 sm:mb-4 text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl lg:text-5xl">
             How it works
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-sm sm:text-base md:text-lg text-muted-foreground px-2">
             Get started in four simple steps
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, index) => {
             const Icon = step.icon;
             return (
               <div key={index} className="relative">
                 <Card className="h-full transition-all hover:shadow-lg hover:bg-[#f9f9f9]">
-                  <CardHeader>
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                        <Icon className="h-6 w-6 text-primary" />
+                  <CardHeader className="p-4 sm:p-6">
+                    <div className="mb-3 sm:mb-4 flex items-center justify-between">
+                      <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-primary/10">
+                        <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                       </div>
-                      <span className="text-4xl font-bold text-muted-foreground/20">
+                      <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-muted-foreground/20">
                         {step.step}
                       </span>
                     </div>
-                    <CardTitle>{step.title}</CardTitle>
-                    <CardDescription>{step.description}</CardDescription>
+                    <CardTitle className="text-base sm:text-lg mb-2">{step.title}</CardTitle>
+                    <CardDescription className="text-sm sm:text-base">{step.description}</CardDescription>
                   </CardHeader>
                 </Card>
               </div>
