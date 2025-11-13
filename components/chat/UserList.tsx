@@ -94,14 +94,19 @@ export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: User
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="p-3 md:p-4 border-b shrink-0 bg-white">
+      <div className="p-4 md:p-5 border-b border-gray-200/50 shrink-0 bg-white/80 backdrop-blur-[10px]">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-base md:text-lg font-semibold">Chat</h2>
+          <h2
+            className="text-lg md:text-xl font-bold text-[#070825] tracking-tight"
+            style={{ fontFamily: 'var(--font-poppins)' }}
+          >
+            Chat
+          </h2>
           {user && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 md:h-9 md:w-9 shrink-0"
+              className="h-9 w-9 md:h-10 md:w-10 shrink-0 text-[#070825]/70 hover:text-[#070825] hover:bg-gray-100/50 rounded-full transition-colors"
               onClick={handleLogout}
               title="Logout"
               aria-label="Logout"
@@ -111,32 +116,32 @@ export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: User
           )}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="divide-y">
+      <div className="flex-1 overflow-y-auto min-h-0 bg-white">
+        <div className="divide-y divide-gray-100/50">
           {/* AI Chat Option */}
           {aiUser && (
             <button
               onClick={handleAIClick}
               disabled={isPending}
-              className={`w-full px-4 py-3 hover:bg-[#f8fafb] transition-colors text-left ${
-                isAISelected ? 'bg-[#f8fafb]' : ''
+              className={`w-full px-4 py-3.5 hover:bg-gray-50/80 transition-all duration-200 text-left group ${
+                isAISelected ? 'bg-[#070825]/5 border-l-2 border-[#070825]' : ''
               }`}
             >
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <Avatar className="h-10 w-10 bg-purple-100">
-                    <AvatarFallback className="bg-purple-500 text-white">
+                  <Avatar className="h-11 w-11 bg-gradient-to-br from-purple-400 to-purple-600 ring-2 ring-white shadow-sm">
+                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-purple-600 text-white font-semibold">
                       <Bot className="h-5 w-5" />
                     </AvatarFallback>
                   </Avatar>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium truncate">
+                    <p className="text-sm font-semibold text-[#070825] truncate">
                       {aiUser.name || 'AI Assistant'}
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-xs text-[#070825]/60 truncate mt-0.5">
                     Chat with AI
                   </p>
                 </div>
@@ -156,33 +161,33 @@ export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: User
                     key={user.id}
                     onClick={() => handleUserClick(user)}
                     disabled={isPending}
-                    className={`w-full px-4 py-3 hover:bg-[#f8fafb] transition-colors text-left ${
-                      isSelected ? 'bg-[#f8fafb]' : ''
+                    className={`w-full px-4 py-3.5 hover:bg-gray-50/80 transition-all duration-200 text-left group ${
+                      isSelected ? 'bg-[#070825]/5 border-l-2 border-[#070825]' : ''
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <Avatar className="h-10 w-10">
+                        <Avatar className="h-11 w-11 ring-2 ring-white shadow-sm">
                           <AvatarImage src={user.avatar || undefined} alt={user.name || user.email} />
-                          <AvatarFallback>
+                          <AvatarFallback className="bg-[#070825]/10 text-[#070825] font-semibold">
                             {getInitials(user.name, user.email)}
                           </AvatarFallback>
                         </Avatar>
                         {isOnline && (
-                          <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500 text-green-500 border-2 border-white rounded-full" />
+                          <Circle className="absolute bottom-0 right-0 h-3.5 w-3.5 fill-green-500 text-green-500 border-2 border-white rounded-full shadow-sm" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium truncate">
+                          <p className="text-sm font-semibold text-[#070825] truncate">
                             {user.name || user.email}
                           </p>
                           {!isOnline && (
-                            <span className="text-xs text-muted-foreground">offline</span>
+                            <span className="text-xs text-[#070825]/50 font-normal">offline</span>
                           )}
                         </div>
                         {user.name && (
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="text-xs text-[#070825]/60 truncate mt-0.5">
                             {user.email}
                           </p>
                         )}
@@ -195,7 +200,7 @@ export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: User
           )}
 
           {(!users || users.length === 0) && !aiUser && (
-            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center py-12 text-sm text-[#070825]/60">
               No users found
             </div>
           )}

@@ -122,8 +122,8 @@ export default function ChatPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#f9f9f9] flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-[#070825]/60" />
       </div>
     );
   }
@@ -133,16 +133,16 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-[#f9f9f9] relative">
+    <div className="h-screen flex overflow-hidden bg-white relative">
       {/* User list sidebar */}
       <div
         className={`
           absolute md:relative
           inset-0 md:inset-auto
           w-full md:w-80
-          border-r bg-white flex flex-col overflow-hidden
+          border-r border-gray-200/50 bg-white/95 backdrop-blur-[10px] flex flex-col overflow-hidden
           z-50 md:z-auto
-          transition-transform duration-300 ease-in-out
+          transition-transform duration-300 ease-in-out shadow-lg md:shadow-none
           ${showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
@@ -157,7 +157,7 @@ export default function ChatPage() {
       <div
         className={`
           absolute md:relative inset-0 md:inset-auto
-          flex-1 flex flex-col overflow-hidden min-w-0
+          flex-1 flex flex-col overflow-hidden min-w-0 bg-white
           ${selectedUserId ? 'flex' : 'hidden md:flex'}
           z-30 md:z-auto
         `}
@@ -180,7 +180,7 @@ export default function ChatPage() {
       {/* Overlay for mobile when sidebar is open and no user selected */}
       {showSidebar && !selectedUserId && (
         <div
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          className="md:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
           onClick={handleSidebarToggle}
         />
       )}

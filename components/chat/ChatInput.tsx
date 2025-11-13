@@ -353,28 +353,30 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
 
   return (
     <div
-      className={`p-3 md:p-4 border-t bg-white shrink-0 safe-area-pb ${isDragging ? 'bg-blue-50' : ''}`}
+      className={`p-4 md:p-5 border-t border-gray-200/50 bg-white/80 backdrop-blur-[10px] shrink-0 safe-area-pb transition-colors ${
+        isDragging ? 'bg-[#070825]/5 border-[#070825]/20' : ''
+      }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Attachment preview */}
       {attachment && (
-        <div className="mb-2 p-2 bg-gray-50 rounded-lg border flex items-center gap-2">
+        <div className="mb-3 p-3 bg-gray-50/80 rounded-xl border border-gray-200/50 flex items-center gap-3 shadow-sm">
           {isImage && attachment.url ? (
             <img
               src={attachment.url}
               alt={attachment.name}
-              className="w-12 h-12 object-cover rounded"
+              className="w-14 h-14 object-cover rounded-lg"
             />
           ) : (
-            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-              <File className="h-6 w-6 text-gray-500" />
+            <div className="w-14 h-14 bg-gray-200/50 rounded-lg flex items-center justify-center">
+              <File className="h-6 w-6 text-[#070825]/60" />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{attachment.name}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm font-semibold text-[#070825] truncate">{attachment.name}</p>
+            <p className="text-xs text-[#070825]/60 mt-0.5">
               {(attachment.size / 1024).toFixed(1)} KB
             </p>
           </div>
@@ -382,7 +384,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
             type="button"
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0"
+            className="h-9 w-9 shrink-0 text-[#070825]/70 hover:text-[#070825] hover:bg-gray-100/50 rounded-full transition-colors"
             onClick={handleRemoveAttachment}
             disabled={isPending}
           >
@@ -391,7 +393,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <form onSubmit={handleSubmit} className="flex gap-2.5 items-end">
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -407,7 +409,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
           type="button"
           variant="ghost"
           size="icon"
-          className="h-10 w-10 shrink-0"
+          className="h-11 w-11 shrink-0 text-[#070825]/70 hover:text-[#070825] hover:bg-gray-100/50 rounded-full transition-colors"
           onClick={() => fileInputRef.current?.click()}
           disabled={!!(isPending || isAIChat)}
           title="Attach file"
@@ -422,7 +424,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={isPending}
-          className="flex-1 text-base md:text-sm"
+          className="flex-1 text-base md:text-sm rounded-full border-gray-200/50 focus:border-[#070825] focus:ring-[#070825]/20 bg-white text-[#070825] placeholder:text-[#070825]/40 py-6 md:py-7 px-4 md:px-5"
           autoFocus
           autoComplete="off"
           autoCorrect="off"
@@ -432,7 +434,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
         <Button
           type="submit"
           disabled={!canSend || isPending}
-          className="shrink-0 h-10 w-10 md:h-auto md:w-auto p-0 md:px-4"
+          className="shrink-0 h-11 w-11 md:h-11 md:w-auto md:px-6 bg-[#070825] hover:bg-[#070825]/90 text-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           size="icon"
         >
           {isAILoading || isUploading ? (
@@ -443,17 +445,17 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
         </Button>
       </form>
       {isAILoading && (
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-xs text-[#070825]/60 mt-2.5 ml-14">
           AI is thinking...
         </p>
       )}
       {isUploading && (
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-xs text-[#070825]/60 mt-2.5 ml-14">
           Uploading file...
         </p>
       )}
       {isDragging && (
-        <p className="text-xs text-muted-foreground mt-2 text-center">
+        <p className="text-xs text-[#070825]/60 mt-2.5 text-center">
           Drop file here to attach
         </p>
       )}

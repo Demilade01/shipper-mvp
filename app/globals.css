@@ -146,20 +146,22 @@
 
   .overflow-y-auto::-webkit-scrollbar-thumb,
   .overflow-y-scroll::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
+    background-color: rgba(7, 8, 37, 0.2);
     border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
 
   .overflow-y-auto::-webkit-scrollbar-thumb:hover,
   .overflow-y-scroll::-webkit-scrollbar-thumb:hover {
-    background-color: #94a3b8;
+    background-color: rgba(7, 8, 37, 0.35);
   }
 
   /* Firefox */
   .overflow-y-auto,
   .overflow-y-scroll {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: rgba(7, 8, 37, 0.2) transparent;
   }
 
   /* Safe area for mobile devices (iOS notch, Android nav bar) */
