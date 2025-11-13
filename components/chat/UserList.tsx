@@ -16,7 +16,7 @@ interface UserListProps {
 export function UserList({ onUserSelect, selectedUserId }: UserListProps) {
   const { data: users, isLoading, error } = useUsers();
   const { mutateAsync: createChat, isPending } = useCreateChat();
-  const { onlineUsers } = useSocket();
+  const { onlineUsers, isConnected } = useSocket();
 
   const handleUserClick = async (user: User) => {
     try {
@@ -25,7 +25,6 @@ export function UserList({ onUserSelect, selectedUserId }: UserListProps) {
       // For now, we'll just select the user and the chat page will handle finding the chat
       onUserSelect(user.id);
     } catch (error: any) {
-      console.error('Error creating chat:', error);
       // If chat already exists, just select the user
       // The chat page will find the existing chat
       onUserSelect(user.id);

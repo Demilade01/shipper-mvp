@@ -41,4 +41,4 @@ yarn-error.log*
 next-env.d.ts
 
 BRAINSTORM.md
-/app/generated/prisma
+# Prisma client is generated to node_modules/.prisma/client by default
