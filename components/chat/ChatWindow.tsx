@@ -19,9 +19,12 @@ interface ChatWindowProps {
 export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, receiverAvatar }: ChatWindowProps) {
   const { data: messages, isLoading, error } = useMessages(chatId);
   const { user } = useAuth();
-  const { socket } = useSocket();
+  const { socket, onlineUsers } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [realTimeMessages, setRealTimeMessages] = useState<Message[]>([]);
+
+  // Check if receiver is online
+  const isReceiverOnline = receiverId ? onlineUsers.has(receiverId) : false;
 
   // Combine API messages with real-time messages, removing duplicates
   const allMessages = (() => {
@@ -167,7 +170,9 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
               </Avatar>
               <div>
                 <p className="font-medium">{displayName}</p>
-                <p className="text-xs text-muted-foreground">Start a conversation</p>
+                <p className="text-xs text-muted-foreground">
+                  {isReceiverOnline ? 'Active now' : 'offline'}
+                </p>
               </div>
             </div>
           </div>
@@ -225,7 +230,9 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
           </Avatar>
           <div>
             <p className="font-medium">{receiverName || receiverEmail || 'User'}</p>
-            <p className="text-xs text-muted-foreground">Active now</p>
+            <p className="text-xs text-muted-foreground">
+              {isReceiverOnline ? 'Active now' : 'offline'}
+            </p>
           </div>
         </div>
       </div>
