@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { put } from '@vercel/blob';
 import { getUserFromToken } from '@/lib/auth';
 import { getAccessTokenCookie } from '@/lib/cookies';
 
@@ -80,31 +78,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const fileExt = fileExtension || 'bin'; // Use 'bin' as default if no extension
-    const fileName = `${timestamp}-${randomString}.${fileExt}`;
-    const filePath = join(uploadsDir, fileName);
+    const fileName = `uploads/${timestamp}-${randomString}.${fileExt}`;
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // Upload file to Vercel Blob Storage
+    // Note: FormData.get() returns a Blob in Node.js, which put() accepts directly
+    const blob = await put(fileName, file, {
+      access: 'public',
+      contentType: file.type || 'application/octet-stream',
+    });
 
-    // Write file to disk
-    await writeFile(filePath, buffer);
-
-    // Return file URL
-    const fileUrl = `/uploads/${fileName}`;
-
+    // Return blob URL and metadata
     return NextResponse.json({
-      url: fileUrl,
+      url: blob.url,
       name: file.name,
       type: file.type,
       size: file.size,
