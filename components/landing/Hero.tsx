@@ -1,51 +1,132 @@
 'use client';
 
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export function Hero() {
   return (
-    <section className="bg-[#f8fafb] py-12 sm:py-16 md:py-20 lg:py-32">
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm">
-            <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white">
+      {/* Background with subtle glassy effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-gray-50/30" />
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="mx-auto max-w-4xl text-center">
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-6 md:mb-8 inline-flex items-center gap-2 rounded-full border border-[#070825]/10 bg-white/60 backdrop-blur-[10px] px-4 py-2 text-xs sm:text-sm text-[#070825]/70 shadow-sm"
+          >
+            <span>✨</span>
             <span>Real-time chat made simple</span>
-          </div>
+          </motion.div>
 
-          <h1 className="mb-4 sm:mb-6 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">
+          {/* Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="mb-6 md:mb-8 text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-[#070825] leading-tight"
+            style={{ fontFamily: 'var(--font-poppins)' }}
+          >
             Connect with your team
-            <br className="hidden sm:block" />
-            <span className="text-primary">instantly</span>
-          </h1>
+            <br />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#070825] to-[#070825]/70">
+              instantly
+            </span>
+          </motion.h1>
 
-          <p className="mb-6 sm:mb-8 text-base text-muted-foreground sm:text-lg md:text-xl lg:text-2xl px-2">
+          {/* Supporting Text */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="mb-8 md:mb-12 text-lg sm:text-xl md:text-2xl text-[#070825]/60 max-w-2xl mx-auto px-4 leading-relaxed"
+          >
             Send messages, see who&apos;s online, and chat in real-time.
             <br className="hidden sm:block" />
             Fast, secure, and free to use.
-          </p>
+          </motion.p>
 
-          <div className="flex flex-col items-stretch sm:items-center justify-center gap-3 sm:gap-4 sm:flex-row px-2">
+          {/* CTA Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.7 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4"
+          >
             <Link href="/register" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto text-sm sm:text-base px-6 sm:px-8">
-                Get Started Free
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto"
+              >
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto text-base sm:text-lg font-semibold px-8 sm:px-10 py-6 sm:py-7 bg-[#070825] hover:bg-[#070825]/90 text-white rounded-full shadow-xl shadow-[#070825]/20 hover:shadow-2xl hover:shadow-[#070825]/30 transition-all duration-300"
+                >
+                  Get Started
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </motion.div>
             </Link>
             <Link href="/login" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-sm sm:text-base px-6 sm:px-8">
-                Sign In
-              </Button>
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto"
+              >
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  className="w-full sm:w-auto text-base sm:text-lg font-medium px-8 sm:px-10 py-6 sm:py-7 text-[#070825]/70 hover:text-[#070825] hover:bg-white/80 border-2 border-[#070825]/10 rounded-full transition-all duration-300"
+                >
+                  Sign In
+                </Button>
+              </motion.div>
             </Link>
-          </div>
+          </motion.div>
 
-          <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-muted-foreground px-2">
+          {/* Secondary Text */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.9 }}
+            className="mt-8 md:mt-10 text-sm sm:text-base text-[#070825]/50 px-4"
+          >
             No credit card required • Free forever
-          </p>
+          </motion.p>
         </div>
       </div>
+
+      {/* Decorative elements with subtle motion */}
+      <motion.div
+        className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#070825]/5 rounded-full blur-3xl"
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
+      <motion.div
+        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#070825]/3 rounded-full blur-3xl"
+        animate={{
+          scale: [1.2, 1, 1.2],
+          opacity: [0.2, 0.4, 0.2],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
     </section>
   );
 }
-
