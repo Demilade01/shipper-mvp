@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRefreshToken, signAccessToken } from '@/lib/auth';
-import { getRefreshTokenCookie, setAccessTokenCookie } from '@/lib/cookies';
+import { getRefreshTokenCookie, setAccessTokenCookie, setSocketTokenCookie } from '@/lib/cookies';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,8 +29,9 @@ export async function POST(request: NextRequest) {
       email: payload.email,
     });
 
-    // Set new access token cookie
+    // Set new access token cookies (both HttpOnly and non-HttpOnly for Socket.io)
     await setAccessTokenCookie(accessToken);
+    await setSocketTokenCookie(accessToken);
 
     return NextResponse.json({
       message: 'Token refreshed successfully',

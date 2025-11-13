@@ -19,9 +19,13 @@ interface ChatWindowProps {
 export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, receiverAvatar }: ChatWindowProps) {
   const { data: messages, isLoading, error } = useMessages(chatId);
   const { user } = useAuth();
-  const { socket } = useSocket();
+  const { socket, onlineUsers, isConnected } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [realTimeMessages, setRealTimeMessages] = useState<Message[]>([]);
+
+  // Check if receiver is online (only if socket is connected)
+  const isReceiverOnline = receiverId && isConnected ? onlineUsers.has(receiverId) : false;
 
   // Combine API messages with real-time messages, removing duplicates
   const allMessages = (() => {
@@ -102,8 +106,26 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current && messagesEndRef.current) {
+      // Only scroll if user is near the bottom (within 100px)
+      const container = messagesContainerRef.current;
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+
+      if (isNearBottom || allMessages.length <= 1) {
+        // Smooth scroll to bottom
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   }, [allMessages]);
+
+  // Scroll to bottom on initial load
+  useEffect(() => {
+    if (messages && messages.length > 0 && messagesContainerRef.current) {
+      // Scroll to bottom immediately on load
+      const container = messagesContainerRef.current;
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [messages, chatId]);
 
   // Reset real-time messages when chat changes or messages are refetched
   useEffect(() => {
@@ -155,9 +177,9 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
       // User is selected but chat doesn't exist yet - show receiver info
       const displayName = receiverName || receiverEmail || 'User';
       return (
-        <div className="flex-1 flex flex-col bg-[#f9f9f9]">
+        <div className="flex-1 flex flex-col bg-[#f9f9f9] min-h-0 overflow-hidden">
           {/* Chat header */}
-          <div className="p-4 border-b bg-white">
+          <div className="p-4 border-b bg-white shrink-0">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={receiverAvatar || undefined} alt={displayName} />
@@ -167,13 +189,15 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
               </Avatar>
               <div>
                 <p className="font-medium">{displayName}</p>
-                <p className="text-xs text-muted-foreground">Start a conversation</p>
+                <p className="text-xs text-muted-foreground">
+                  {isReceiverOnline ? 'Active now' : 'offline'}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Empty state */}
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center min-h-0">
             <div className="text-center text-muted-foreground">
               <p className="text-lg font-medium">No messages yet</p>
               <p className="text-sm mt-2">Start the conversation by sending a message</p>
@@ -185,7 +209,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
 
     // No user selected
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9]">
+      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] min-h-0">
         <div className="text-center text-muted-foreground">
           <p className="text-lg font-medium">Select a user to start chatting</p>
           <p className="text-sm mt-2">Choose a user from the list to begin a conversation</p>
@@ -196,7 +220,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9]">
+      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] min-h-0">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -204,7 +228,7 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
 
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9]">
+      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] min-h-0">
         <div className="text-center text-muted-foreground">
           <p className="text-sm">Failed to load messages</p>
         </div>
@@ -213,9 +237,9 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[#f9f9f9]">
+    <div className="flex-1 flex flex-col bg-[#f9f9f9] min-h-0 overflow-hidden">
       {/* Chat header */}
-      <div className="p-4 border-b bg-white">
+      <div className="p-4 border-b bg-white shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={receiverAvatar || undefined} alt={receiverName || receiverEmail || 'User'} />
@@ -225,52 +249,63 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
           </Avatar>
           <div>
             <p className="font-medium">{receiverName || receiverEmail || 'User'}</p>
-            <p className="text-xs text-muted-foreground">Active now</p>
+            <p className="text-xs text-muted-foreground">
+              {isReceiverOnline ? 'Active now' : 'offline'}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+        style={{
+          scrollBehavior: 'smooth',
+        }}
+      >
         {allMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-center text-muted-foreground">
             <p>No messages yet. Start the conversation!</p>
           </div>
         ) : (
-          allMessages.map((message) => {
-            const isOwnMessage = message.senderId === user?.id;
-            const senderName = message.sender.name || message.sender.email;
+          <>
+            {allMessages.map((message) => {
+              const isOwnMessage = message.senderId === user?.id;
+              const senderName = message.sender.name || message.sender.email;
 
-            return (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
-              >
-                <Avatar className="h-8 w-8 shrink-0">
-                  <AvatarImage src={message.sender.avatar || undefined} alt={senderName} />
-                  <AvatarFallback>
-                    {getInitials(message.sender.name, message.sender.email)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className={`flex flex-col gap-1 max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-                  <div
-                    className={`rounded-lg px-4 py-2 ${
-                      isOwnMessage
-                        ? 'bg-[#1e3a8a] text-white'
-                        : 'bg-white border'
-                    }`}
-                  >
-                    <p className="text-sm">{message.content}</p>
+              return (
+                <div
+                  key={message.id}
+                  className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                >
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage src={message.sender.avatar || undefined} alt={senderName} />
+                    <AvatarFallback>
+                      {getInitials(message.sender.name, message.sender.email)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className={`flex flex-col gap-1 max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                    <div
+                      className={`rounded-lg px-4 py-2 ${
+                        isOwnMessage
+                          ? 'bg-[#1e3a8a] text-white'
+                          : 'bg-white border'
+                      }`}
+                      style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground px-1">
+                      {formatMessageTime(message.createdAt)}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground px-1">
-                    {formatMessageTime(message.createdAt)}
-                  </p>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </>
         )}
-        <div ref={messagesEndRef} />
       </div>
     </div>
   );

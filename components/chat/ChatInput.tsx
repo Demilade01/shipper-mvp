@@ -53,16 +53,18 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
         throw new Error('Chat ID is required');
       }
 
-      // Send message via API
-      await createMessage({
-        content: messageContent,
-        chatId: actualChatId,
-        receiverId,
-      });
-
-      // Also send via Socket.io for real-time updates (if socket is connected)
+      // Prefer Socket.io for real-time messaging (saves to DB and broadcasts)
+      // Fallback to API if Socket.io is not connected
       if (socket && socket.connected) {
+        // Send via Socket.io (server will save to DB and broadcast)
         socket.emit('sendMessage', {
+          content: messageContent,
+          chatId: actualChatId,
+          receiverId,
+        });
+      } else {
+        // Fallback to API if Socket.io is not connected
+        await createMessage({
           content: messageContent,
           chatId: actualChatId,
           receiverId,
@@ -100,7 +102,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
   }
 
   return (
-    <div className="p-4 border-t bg-white">
+    <div className="p-4 border-t bg-white shrink-0">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
           ref={inputRef}

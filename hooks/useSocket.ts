@@ -22,6 +22,7 @@ export interface ServerToClientEvents {
   }) => void;
   userOnline: (userId: string) => void;
   userOffline: (userId: string) => void;
+  onlineUsers: (userIds: string[]) => void; // Initial list of online users
   typing: (data: { userId: string; chatId: string; isTyping: boolean }) => void;
   error: (data: { message: string }) => void;
 }
@@ -45,75 +46,141 @@ export function useSocket() {
   const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
       return;
     }
 
-    // Get access token from cookie
-    const getAccessToken = () => {
+    // Function to get socket token from cookies
+    const getSocketToken = () => {
       const cookies = document.cookie.split(';');
-      const accessTokenCookie = cookies.find(cookie => cookie.trim().startsWith('access_token='));
-      return accessTokenCookie ? accessTokenCookie.split('=')[1] : null;
+      // Try socket_token first (non-HttpOnly cookie for Socket.io)
+      const socketTokenCookie = cookies.find(cookie => cookie.trim().startsWith('socket_token='));
+      if (socketTokenCookie) {
+        const token = socketTokenCookie.split('=')[1]?.trim();
+        if (token) {
+          return token;
+        }
+      }
+      return null;
     };
 
-    const token = getAccessToken();
-    if (!token) {
-      return;
-    }
+    // Function to fetch socket token from API
+    const fetchSocketToken = async () => {
+      try {
+        const response = await fetch('/api/auth/socket-token', {
+          method: 'GET',
+          credentials: 'include', // Important: include cookies
+        });
 
-    // Initialize Socket.io client
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
-    const newSocket = io(socketUrl, {
-      path: '/api/socket',
-      auth: {
-        token: token,
-      },
-      transports: ['websocket', 'polling'],
-    });
+        if (!response.ok) {
+          return null;
+        }
 
-    // Connection events
-    newSocket.on('connect', () => {
-      console.log('Socket connected:', newSocket.id);
-      setIsConnected(true);
-    });
+        // Cookie should now be set, try to get it again
+        return getSocketToken();
+      } catch (error) {
+        return null;
+      }
+    };
 
-    newSocket.on('disconnect', () => {
-      console.log('Socket disconnected');
-      setIsConnected(false);
-    });
+    // Initialize socket connection
+    const initializeSocket = async () => {
+      // First, try to get token from cookies
+      let token = getSocketToken();
 
-    newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-      setIsConnected(false);
-    });
+      // If not found, fetch it from API
+      if (!token) {
+        token = await fetchSocketToken();
+      }
 
-    // User online/offline events
-    newSocket.on('userOnline', (userId) => {
-      setOnlineUsers((prev) => new Set(prev).add(userId));
-    });
+      if (!token) {
+        return null;
+      }
 
-    newSocket.on('userOffline', (userId) => {
-      setOnlineUsers((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
+      // Initialize Socket.io client
+      const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+      const newSocket = io(socketUrl, {
+        path: '/api/socket',
+        auth: {
+          token: token,
+        },
+        transports: ['websocket', 'polling'],
       });
-    });
 
-    // Error events
-    newSocket.on('error', (data) => {
-      console.error('Socket error:', data.message);
-    });
+      // Connection events
+      newSocket.on('connect', () => {
+        setIsConnected(true);
+      });
 
-    setSocket(newSocket);
+      newSocket.on('disconnect', () => {
+        setIsConnected(false);
+        setOnlineUsers(new Set()); // Clear online users on disconnect
+      });
+
+      newSocket.on('connect_error', () => {
+        setIsConnected(false);
+      });
+
+      // Initial list of online users (sent when client connects)
+      newSocket.on('onlineUsers', (userIds: string[]) => {
+        setOnlineUsers(new Set(userIds));
+      });
+
+      // User online/offline events
+      newSocket.on('userOnline', (userId) => {
+        setOnlineUsers((prev) => new Set(prev).add(userId));
+      });
+
+      newSocket.on('userOffline', (userId) => {
+        setOnlineUsers((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(userId);
+          return newSet;
+        });
+      });
+
+      // Error events
+      newSocket.on('error', () => {
+        // Handle error silently
+      });
+
+      setSocket(newSocket);
+      socketRef.current = newSocket; // Store in ref for cleanup
+
+      // Return cleanup function
+      const cleanup = () => {
+        newSocket.close();
+        setSocket(null);
+        socketRef.current = null;
+        setIsConnected(false);
+        setOnlineUsers(new Set());
+      };
+
+      cleanupRef.current = cleanup; // Store cleanup in ref
+      return cleanup;
+    };
+
+    // Initialize socket
+    initializeSocket().catch(() => {
+      // Handle error silently
+    });
 
     // Cleanup on unmount
     return () => {
-      newSocket.close();
-      setSocket(null);
-      setIsConnected(false);
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      } else if (socketRef.current) {
+        socketRef.current.close();
+        setSocket(null);
+        socketRef.current = null;
+        setIsConnected(false);
+        setOnlineUsers(new Set());
+      }
     };
   }, [isAuthenticated, user]);
 
