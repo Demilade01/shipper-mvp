@@ -12,9 +12,10 @@ import { User } from '@/hooks/useUsers';
 interface UserListProps {
   onUserSelect: (userId: string) => void;
   selectedUserId?: string;
+  onSidebarToggle?: () => void; // Optional callback for mobile sidebar toggle
 }
 
-export function UserList({ onUserSelect, selectedUserId }: UserListProps) {
+export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: UserListProps) {
   const { data: users, isLoading, error } = useUsers();
   const { data: aiUser, isLoading: isLoadingAI } = useAIUser();
   const { mutateAsync: createChat, isPending } = useCreateChat();
@@ -81,7 +82,7 @@ export function UserList({ onUserSelect, selectedUserId }: UserListProps) {
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="p-4 border-b shrink-0">
-        <h2 className="text-lg font-semibold">Users</h2>
+        <h2 className="text-lg font-semibold">Chat</h2>
       </div>
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="divide-y">

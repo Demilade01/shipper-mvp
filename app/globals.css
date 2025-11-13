@@ -157,4 +157,19 @@
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
   }
+
+  /* Safe area for mobile devices (iOS notch, Android nav bar) */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
+
+/* Touch-friendly targets on mobile */
+@media (max-width: 768px) {
+  button,
+  [role="button"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }

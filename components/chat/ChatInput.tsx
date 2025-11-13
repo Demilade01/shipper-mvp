@@ -163,7 +163,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
   }
 
   return (
-    <div className="p-4 border-t bg-white shrink-0">
+    <div className="p-3 md:p-4 border-t bg-white shrink-0 safe-area-pb">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
           ref={inputRef}
@@ -172,18 +172,23 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={isPending}
-          className="flex-1"
+          className="flex-1 text-base md:text-sm"
           autoFocus
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="true"
         />
         <Button
           type="submit"
           disabled={!message.trim() || isPending}
-          className="shrink-0"
+          className="shrink-0 h-10 w-10 md:h-auto md:w-auto p-0 md:px-4"
+          size="icon"
         >
           {isAILoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-5 w-5 md:h-4 md:w-4 animate-spin" />
           ) : (
-            <Send className="h-4 w-4" />
+            <Send className="h-5 w-5 md:h-4 md:w-4" />
           )}
         </Button>
       </form>

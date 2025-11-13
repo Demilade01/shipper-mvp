@@ -22,6 +22,7 @@ export default function ChatPage() {
   const router = useRouter();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [currentChat, setCurrentChat] = useState<Chat | null>(null);
+  const [showSidebar, setShowSidebar] = useState(true); // Mobile sidebar state
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -54,6 +55,55 @@ export default function ChatPage() {
     setCurrentChat(null);
   }, [selectedUserId, chats]);
 
+  // Handle user selection (hide sidebar on mobile)
+  const handleUserSelect = (userId: string) => {
+    setSelectedUserId(userId);
+    // Hide sidebar on mobile when user is selected
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setShowSidebar(false);
+    }
+  };
+
+  // Handle back button (show sidebar on mobile)
+  const handleBackToUsers = () => {
+    setSelectedUserId(null);
+    setCurrentChat(null);
+    // Show sidebar on mobile when going back
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setShowSidebar(true);
+    }
+  };
+
+  // Handle sidebar toggle for mobile
+  const handleSidebarToggle = () => {
+    setShowSidebar((prev) => !prev);
+  };
+
+  // Reset sidebar state on window resize and based on selection
+  useEffect(() => {
+    const handleResize = () => {
+      // On desktop (md and above), always show sidebar
+      if (window.innerWidth >= 768) {
+        setShowSidebar(true);
+      } else {
+        // On mobile, hide sidebar if user is selected, show if no user selected
+        setShowSidebar(!selectedUserId);
+      }
+    };
+
+    // Set initial state based on screen size and selection
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth >= 768) {
+        setShowSidebar(true);
+      } else {
+        setShowSidebar(!selectedUserId);
+      }
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [selectedUserId]);
+
   // Handle chat creation from ChatInput
   const handleChatCreated = async (chatId: string) => {
     // Refetch chats to get the new chat
@@ -83,23 +133,42 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-[#f9f9f9]">
+    <div className="h-screen flex overflow-hidden bg-[#f9f9f9] relative">
       {/* User list sidebar */}
-      <div className="w-80 border-r bg-white flex flex-col overflow-hidden">
+      <div
+        className={`
+          absolute md:relative
+          inset-0 md:inset-auto
+          w-full md:w-80
+          border-r bg-white flex flex-col overflow-hidden
+          z-50 md:z-auto
+          transition-transform duration-300 ease-in-out
+          ${showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
+      >
         <UserList
-          onUserSelect={setSelectedUserId}
+          onUserSelect={handleUserSelect}
           selectedUserId={selectedUserId || undefined}
+          onSidebarToggle={handleSidebarToggle}
         />
       </div>
 
       {/* Chat window */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div
+        className={`
+          absolute md:relative inset-0 md:inset-auto
+          flex-1 flex flex-col overflow-hidden min-w-0
+          ${selectedUserId ? 'flex' : 'hidden md:flex'}
+          z-30 md:z-auto
+        `}
+      >
         <ChatWindow
           chatId={currentChat?.id || null}
           receiverId={receiverId}
           receiverName={receiverName}
           receiverEmail={receiverEmail}
           receiverAvatar={receiverAvatar}
+          onBack={handleBackToUsers}
         />
         <ChatInput
           chatId={currentChat?.id || null}
@@ -107,6 +176,14 @@ export default function ChatPage() {
           onChatCreated={handleChatCreated}
         />
       </div>
+
+      {/* Overlay for mobile when sidebar is open and no user selected */}
+      {showSidebar && !selectedUserId && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={handleSidebarToggle}
+        />
+      )}
     </div>
   );
 }
