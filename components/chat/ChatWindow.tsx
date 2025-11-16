@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useMessages, Message } from '@/hooks/useMessages';
+import { useMessages, Message, MessagesResponse } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { useSocket } from '@/hooks/useSocket';
 import { useAIUser } from '@/hooks/useAIUser';
+import { useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, Download, File as FileIcon } from 'lucide-react';
@@ -21,10 +22,11 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, receiverAvatar, onBack }: ChatWindowProps) {
-  const { data: messages, isLoading, error } = useMessages(chatId);
+  const { data: messagesData, isLoading, error } = useMessages(chatId);
   const { user } = useAuth();
   const { socket, onlineUsers, isConnected } = useSocket();
   const { data: aiUser } = useAIUser();
+  const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [realTimeMessages, setRealTimeMessages] = useState<Message[]>([]);
@@ -35,20 +37,40 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
   // Check if receiver is online (only if socket is connected and not AI)
   const isReceiverOnline = !isAIReceiver && receiverId && isConnected ? onlineUsers.has(receiverId) : false;
 
-  // Combine API messages with real-time messages, removing duplicates
+  // Get messages from API response
+  const messages = messagesData?.messages || [];
+
+  // Combine API messages (including optimistic from cache) with real-time messages, removing duplicates
   const allMessages = (() => {
     const messageMap = new Map<string, Message>();
 
-    // Add API messages first
-    if (messages) {
-      messages.forEach((msg) => {
-        messageMap.set(msg.id, msg);
-      });
-    }
+    // Add API messages first (includes optimistic messages from cache)
+    messages.forEach((msg) => {
+      messageMap.set(msg.id, msg);
+    });
 
-    // Add real-time messages (they'll overwrite API messages if duplicate)
+    // Add real-time messages (they'll overwrite API messages if duplicate, including optimistic ones)
     realTimeMessages.forEach((msg) => {
       messageMap.set(msg.id, msg);
+
+      // If this is a real message matching an optimistic one, remove the optimistic
+      if (msg._optimistic !== true) {
+        // Find and remove matching optimistic message by content/timestamp
+        const optimisticIds: string[] = [];
+        messageMap.forEach((cachedMsg, cachedId) => {
+          if (cachedMsg._optimistic) {
+            const contentMatch = cachedMsg.content === msg.content ||
+              (cachedMsg.attachmentUrl && cachedMsg.attachmentUrl === msg.attachmentUrl);
+            const timeMatch = Math.abs(
+              new Date(cachedMsg.createdAt).getTime() - new Date(msg.createdAt).getTime()
+            ) < 5000; // Within 5 seconds
+            if (contentMatch && timeMatch) {
+              optimisticIds.push(cachedId);
+            }
+          }
+        });
+        optimisticIds.forEach(id => messageMap.delete(id));
+      }
     });
 
     // Convert map to array and sort by timestamp
@@ -152,6 +174,29 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
           attachmentSize: data.attachmentSize || null,
         };
 
+        // Remove optimistic message from cache if it matches (server confirmed)
+        if (chatId) {
+          queryClient.setQueryData<MessagesResponse>(['messages', chatId], (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              messages: old.messages.filter((cachedMsg) => {
+                // Keep message if it's not optimistic
+                if (!cachedMsg._optimistic) return true;
+
+                // Remove optimistic message if it matches the real message
+                const contentMatch = cachedMsg.content === message.content ||
+                  (cachedMsg.attachmentUrl && cachedMsg.attachmentUrl === message.attachmentUrl);
+                const timeMatch = Math.abs(
+                  new Date(cachedMsg.createdAt).getTime() - new Date(message.createdAt).getTime()
+                ) < 5000; // Within 5 seconds
+
+                return !(contentMatch && timeMatch);
+              }),
+            };
+          });
+        }
+
         setRealTimeMessages((prev) => {
           // Avoid duplicates
           if (prev.some((m) => m.id === message.id)) {
@@ -197,20 +242,53 @@ export function ChatWindow({ chatId, receiverId, receiverName, receiverEmail, re
     }
   }, [messages, chatId]);
 
-  // Reset real-time messages when chat changes or messages are refetched
+  // Reset real-time messages when chat changes
   useEffect(() => {
     setRealTimeMessages([]);
   }, [chatId]);
 
   // Remove real-time messages that are now in the API messages (to avoid duplicates after refetch)
+  // Optimistic messages are automatically handled by React Query cache
   useEffect(() => {
     if (messages && messages.length > 0) {
-      setRealTimeMessages((prev) => {
-        const apiMessageIds = new Set(messages.map((m) => m.id));
-        return prev.filter((msg) => !apiMessageIds.has(msg.id));
-      });
+      const apiMessageIds = new Set(messages.map((m) => m.id));
+
+      // Remove real-time messages that are now in API
+      setRealTimeMessages((prev) =>
+        prev.filter((msg) => !apiMessageIds.has(msg.id))
+      );
+
+      // Also clean up optimistic messages from cache that match real messages
+      // This happens when API refetches after server confirms
+      const optimisticInCache = messages.filter(m => m._optimistic);
+      if (optimisticInCache.length > 0) {
+        // Find optimistic messages that match real messages (by content/timestamp)
+        const realMessages = messages.filter(m => !m._optimistic);
+        const optimisticToRemove = optimisticInCache.filter((optMsg) => {
+          return realMessages.some((realMsg) => {
+            const contentMatch = optMsg.content === realMsg.content ||
+              (optMsg.attachmentUrl && optMsg.attachmentUrl === realMsg.attachmentUrl);
+            const timeMatch = Math.abs(
+              new Date(optMsg.createdAt).getTime() - new Date(realMsg.createdAt).getTime()
+            ) < 5000; // Within 5 seconds
+            return contentMatch && timeMatch;
+          });
+        });
+
+        // Remove optimistic messages from cache if they match real messages
+        if (optimisticToRemove.length > 0 && chatId) {
+          const optimisticIds = new Set(optimisticToRemove.map(m => m.id));
+          queryClient.setQueryData<MessagesResponse>(['messages', chatId], (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              messages: old.messages.filter(msg => !optimisticIds.has(msg.id)),
+            };
+          });
+        }
+      }
     }
-  }, [messages]);
+  }, [messages, chatId]);
 
   const getInitials = (name: string | null, email: string) => {
     if (name) {

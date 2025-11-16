@@ -3,13 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useUsers } from '@/hooks/useUsers';
 import { useAIUser } from '@/hooks/useAIUser';
-import { useCreateChat } from '@/hooks/useChats';
+import { useCreateChat, useChats } from '@/hooks/useChats';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Loader2, Circle, Bot, LogOut } from 'lucide-react';
 import { User } from '@/hooks/useUsers';
+import { getMessages } from '@/hooks/useMessages';
 
 interface UserListProps {
   onUserSelect: (userId: string) => void;
@@ -21,9 +23,30 @@ export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: User
   const { data: users, isLoading, error } = useUsers();
   const { data: aiUser, isLoading: isLoadingAI } = useAIUser();
   const { mutateAsync: createChat, isPending } = useCreateChat();
+  const { data: chats } = useChats();
   const { onlineUsers, isConnected } = useSocket();
   const { user, logout } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // Prefetch messages when hovering over a user
+  const handleUserHover = (userId: string) => {
+    if (!chats) return;
+
+    // Find existing chat with this user
+    const chat = chats.find((chat) =>
+      chat.participants.some((p) => p.id === userId)
+    );
+
+    if (chat?.id) {
+      // Prefetch messages for this chat
+      queryClient.prefetchQuery({
+        queryKey: ['messages', chat.id],
+        queryFn: () => getMessages(chat.id),
+        staleTime: 2 * 60 * 1000, // Same as useMessages
+      });
+    }
+  };
 
   const handleUserClick = async (user: User) => {
     try {
@@ -122,6 +145,7 @@ export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: User
           {aiUser && (
             <button
               onClick={handleAIClick}
+              onMouseEnter={() => aiUser && handleUserHover(aiUser.id)}
               disabled={isPending}
               className={`w-full px-4 py-3.5 hover:bg-gray-50/80 transition-all duration-200 text-left group ${
                 isAISelected ? 'bg-[#070825]/5 border-l-2 border-[#070825]' : ''
@@ -160,6 +184,7 @@ export function UserList({ onUserSelect, selectedUserId, onSidebarToggle }: User
                   <button
                     key={user.id}
                     onClick={() => handleUserClick(user)}
+                    onMouseEnter={() => handleUserHover(user.id)}
                     disabled={isPending}
                     className={`w-full px-4 py-3.5 hover:bg-gray-50/80 transition-all duration-200 text-left group ${
                       isSelected ? 'bg-[#070825]/5 border-l-2 border-[#070825]' : ''
