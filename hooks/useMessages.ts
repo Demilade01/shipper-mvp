@@ -22,18 +22,34 @@ export interface Message {
   attachmentName?: string | null;
   attachmentType?: string | null;
   attachmentSize?: number | null;
+  _optimistic?: boolean; // Mark optimistic messages
+}
+
+export interface MessagesResponse {
+  messages: Message[];
+  hasMore: boolean;
+  nextCursor: string | null;
 }
 
 /**
  * Get messages for a chat
  */
-async function getMessages(chatId: string): Promise<Message[]> {
-  const response = await fetch(`/api/messages?chatId=${chatId}`);
+export async function getMessages(chatId: string, cursor?: string | null): Promise<MessagesResponse> {
+  const params = new URLSearchParams({ chatId });
+  if (cursor) {
+    params.append('cursor', cursor);
+  }
+
+  const response = await fetch(`/api/messages?${params.toString()}`);
   if (!response.ok) {
     throw new Error('Failed to fetch messages');
   }
   const data = await response.json();
-  return data.messages;
+  return {
+    messages: data.messages || [],
+    hasMore: data.hasMore || false,
+    nextCursor: data.nextCursor || null,
+  };
 }
 
 /**
@@ -72,7 +88,9 @@ export function useMessages(chatId: string | null) {
     queryFn: () => getMessages(chatId!),
     enabled: !!chatId,
     refetchOnWindowFocus: false,
-    staleTime: 0, // Always refetch messages
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes (increased from 30s)
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes (increased from 5min)
+    placeholderData: (previousData) => previousData, // Show cached data immediately while refetching
   });
 }
 
@@ -85,7 +103,7 @@ export function useCreateMessage() {
   return useMutation({
     mutationFn: createMessage,
     onSuccess: (data) => {
-      // Invalidate messages query for the chat
+      // Invalidate messages query for the chat (will refetch)
       if (data.chatId) {
         queryClient.invalidateQueries({ queryKey: ['messages', data.chatId] });
         queryClient.invalidateQueries({ queryKey: ['chats'] });

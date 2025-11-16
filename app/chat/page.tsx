@@ -46,6 +46,21 @@ export default function ChatPage() {
 
       if (chat) {
         setCurrentChat(chat);
+        // Prefetch messages for this chat (if not already cached)
+        queryClient.prefetchQuery({
+          queryKey: ['messages', chat.id],
+          queryFn: async () => {
+            const response = await fetch(`/api/messages?chatId=${chat.id}&limit=25`);
+            if (!response.ok) throw new Error('Failed to fetch messages');
+            const data = await response.json();
+            return {
+              messages: data.messages || [],
+              hasMore: data.hasMore || false,
+              nextCursor: data.nextCursor || null,
+            };
+          },
+          staleTime: 2 * 60 * 1000,
+        });
         return;
       }
     }
@@ -53,7 +68,7 @@ export default function ChatPage() {
     // Chat doesn't exist yet - will be created when first message is sent
     // For now, set currentChat to null so ChatWindow shows empty state
     setCurrentChat(null);
-  }, [selectedUserId, chats]);
+  }, [selectedUserId, chats, queryClient]);
 
   // Handle user selection (hide sidebar on mobile)
   const handleUserSelect = (userId: string) => {

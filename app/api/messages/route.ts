@@ -65,10 +65,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get messages for this chat
+    // Get pagination params
+    const limit = parseInt(searchParams.get('limit') || '25', 10); // Reduced from 50 to 25 for faster initial load
+    const cursor = searchParams.get('cursor');
+    const take = Math.min(limit, 100); // Max 100 messages per request
+
+    // Get messages for this chat with pagination
     const messages = await db.message.findMany({
       where: {
         chatId: chatId,
+        ...(cursor && {
+          createdAt: {
+            lt: new Date(cursor), // Get messages before this cursor
+          },
+        }),
       },
       include: {
         sender: {
@@ -89,12 +99,27 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        createdAt: 'asc',
+        createdAt: 'desc', // Get newest first
       },
+      take: take + 1, // Fetch one extra to determine if there are more
     });
 
+    // Check if there are more messages
+    const hasMore = messages.length > take;
+    const actualMessages = hasMore ? messages.slice(0, take) : messages;
+
+    // Reverse to show oldest first (for display)
+    actualMessages.reverse();
+
+    // Get cursor for next page (oldest message's createdAt)
+    const nextCursor = actualMessages.length > 0
+      ? new Date(actualMessages[0].createdAt).toISOString()
+      : null;
+
     return NextResponse.json({
-      messages,
+      messages: actualMessages,
+      hasMore,
+      nextCursor,
     });
   } catch (error) {
     console.error('Get messages error:', error);

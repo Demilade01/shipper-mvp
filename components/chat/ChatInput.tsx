@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useCreateMessage } from '@/hooks/useMessages';
+import { useCreateMessage, Message, MessagesResponse } from '@/hooks/useMessages';
 import { useCreateChat } from '@/hooks/useChats';
 import { useSocket } from '@/hooks/useSocket';
 import { useAIUser } from '@/hooks/useAIUser';
+import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
   const { mutateAsync: createChat, isPending: isCreatingChat } = useCreateChat();
   const { socket } = useSocket();
   const { data: aiUser } = useAIUser();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -183,7 +185,7 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
     const messageContent = message.trim() || (attachment ? `📎 ${attachment.name}` : '');
     const currentAttachment = attachment;
 
-    // Clear input and attachment
+    // Clear input and attachment immediately for instant feedback
     setMessage('');
     setAttachment(null);
 
@@ -284,6 +286,47 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
         throw new Error('Chat ID is required');
       }
 
+      // Create optimistic message IMMEDIATELY for text-only messages (no file upload needed)
+      // This makes messages appear instantly when sent
+      if (user && !currentAttachment && actualChatId) {
+        const optimisticId = `optimistic-${Date.now()}-${Math.random()}`;
+        const optimisticMessage: Message = {
+          id: optimisticId,
+          content: messageContent,
+          senderId: user.id,
+          receiverId: receiverId || null,
+          chatId: actualChatId,
+          createdAt: new Date().toISOString(),
+          sender: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            avatar: user.avatar,
+          },
+          receiver: null,
+          attachmentUrl: null,
+          attachmentName: null,
+          attachmentType: null,
+          attachmentSize: null,
+          _optimistic: true,
+        };
+
+        // Optimistically update the cache immediately (before async operations)
+        queryClient.setQueryData<MessagesResponse>(['messages', actualChatId], (old) => {
+          if (!old) {
+            return {
+              messages: [optimisticMessage],
+              hasMore: false,
+              nextCursor: null,
+            };
+          }
+          return {
+            ...old,
+            messages: [...old.messages, optimisticMessage],
+          };
+        });
+      }
+
       // Prepare message data with attachment
       // Use empty string if no content but attachment exists (backend will add emoji)
       const messageData = {
@@ -297,6 +340,46 @@ export function ChatInput({ chatId, receiverId, onChatCreated }: ChatInputProps)
           attachmentSize: attachmentData.size,
         }),
       };
+
+      // If there's an attachment, add optimistic message after upload
+      if (user && currentAttachment && attachmentData) {
+        const optimisticId = `optimistic-${Date.now()}-${Math.random()}`;
+        const optimisticMessage: Message = {
+          id: optimisticId,
+          content: messageContent || `📎 ${attachmentData.name}`,
+          senderId: user.id,
+          receiverId: receiverId || null,
+          chatId: actualChatId,
+          createdAt: new Date().toISOString(),
+          sender: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            avatar: user.avatar,
+          },
+          receiver: null,
+          attachmentUrl: attachmentData.url,
+          attachmentName: attachmentData.name,
+          attachmentType: attachmentData.type,
+          attachmentSize: attachmentData.size,
+          _optimistic: true,
+        };
+
+        // Optimistically update the cache after upload
+        queryClient.setQueryData<MessagesResponse>(['messages', actualChatId], (old) => {
+          if (!old) {
+            return {
+              messages: [optimisticMessage],
+              hasMore: false,
+              nextCursor: null,
+            };
+          }
+          return {
+            ...old,
+            messages: [...old.messages, optimisticMessage],
+          };
+        });
+      }
 
       // Prefer Socket.io for real-time messaging (saves to DB and broadcasts)
       // Fallback to API if Socket.io is not connected
